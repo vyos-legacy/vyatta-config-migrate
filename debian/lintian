@@ -1,0 +1,2 @@
+vyatta-config-migrate: file-in-unusual-dir
+vyatta-config-migrate: dir-or-file-in-opt

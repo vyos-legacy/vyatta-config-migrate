@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# nothing to do for nat 1-to-2
+exit 0
+

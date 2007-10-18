@@ -1,0 +1,88 @@
+#!/bin/sh
+
+# migrate config file to new NAT CLI syntax.
+# arg: <config_file>
+
+TEMP_FILE=/tmp/vyatta_migrate_nat.$$
+
+# remove "translation-type". change "type" to "masquerade" if
+# "translation-type" was "masquerade".
+sed -i '/^[ 	]*type:/{N;/^[ 	]*type:.*\n[ 	]*translation-type:/{s/^\([ 	]*type: \).*\n[ 	]*translation-type: "masquerade"/\1"masquerade"/;s/^\([ 	]*type: .*\)\n.*$/\1/}}' $1
+
+# convert "network" in "inside-address"/"outside-address" to "range".
+awk '
+/^[ 	]*(in|out)side-address/ {
+  print
+  lvl = 0
+  range_output = 0
+  range_start = 0
+  range_stop = 0
+  pre = ""
+  while (1) {
+    getline line
+    if (line ~ /^[ 	]*network: ([0-9.\/])+$/) {
+      match(line, /^[ 	]*/)
+      pre = substr(line, RSTART, RLENGTH)
+      if (match(line, /[0-9.\/]+$/)) {
+        net = substr(line, RSTART, RLENGTH)
+        if (match(net, /\//)) {
+          addr = substr(net, 1, (RSTART - 1))
+          range_start = addr
+          prefix = substr(net, (RSTART + 1))
+          suffix = 32 - prefix
+          n = split(addr, addr_arr, ".")
+          if (n != 4) {
+            continue
+          }
+          for (i = 4; i > 0; i--) {
+            if (suffix < 8) {
+              b = 2 ^ suffix 
+              if (addr_arr[i] % b != 0) {
+                break
+              }
+              addr_arr[i] += (b - 1)
+              suffix = 0
+              break
+            }
+            if (addr_arr[i] != 0) {
+              break
+            }
+            addr_arr[i] = 255
+            suffix = suffix - 8
+          }
+          if (suffix != 0) {
+            continue
+          }
+          range_stop = sprintf("%d.%d.%d.%d", addr_arr[1], addr_arr[2],
+                               addr_arr[3], addr_arr[4])
+        }
+      }
+      continue
+    }
+    if (line ~ /^[ 	]*range /) {
+      range_output = 1
+    }
+    if (line ~ / {$/) {
+      lvl++
+    }
+    if (line ~ /^[ 	]*}$/) {
+      if (lvl == 0) {
+        if (range_output == 0 && range_start != 0 && range_stop != 0) {
+          printf("%srange {\n", pre)
+          printf("%s    start: %s\n", pre, range_start)
+          printf("%s    stop: %s\n", pre, range_stop)
+          printf("%s}\n", pre)
+        }
+        print line
+        break
+      }
+      lvl--
+    }
+    print line
+  }
+}
+!/^[ 	]*(in|out)side-address/ { print }
+' $1 > $TEMP_FILE
+
+mv $TEMP_FILE $1
+

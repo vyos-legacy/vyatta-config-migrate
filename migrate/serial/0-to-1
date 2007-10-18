@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# nothing to do for serial 0-to-1
+exit 0
+

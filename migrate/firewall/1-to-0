@@ -1,0 +1,116 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+# comment out unsupported commands
+my $fw_node = $xcp->get_node(['firewall']);
+my $fw_children = $fw_node->{'children'};
+my @fw_names = $xcp->copy_multis($fw_children, 'name');
+foreach my $fw_name (@fw_names) {
+  my @rules = $xcp->copy_multis($fw_name->{'children'}, 'rule');
+  foreach my $rule (@rules) {
+    my $comment = undef;
+    for (1 .. 1) {
+      my $proto = $xcp->find_child($rule->{'children'}, 'protocol');
+      if (defined($proto)) {
+        my $prot = $proto->{'value'};
+        $prot =~ s/^"(.*)"$/$1/;
+        if (($prot ne "tcp") && ($prot ne "udp") && ($prot ne "icmp")
+            && ($prot ne "all")) {
+          $comment = "protocol \"$prot\" not supported";
+          last;
+        }
+      }
+      my $source = $xcp->find_child($rule->{'children'}, 'source');
+      if (defined($source)) {
+        # multiple port-number
+        my @ports = $xcp->copy_multis($source->{'children'}, 'port-number');
+        if ((scalar @ports) > 1) {
+          $comment = "multiple \"port-number\" not supported";
+          last;
+        }
+        # multiple port-name
+        my @ports = $xcp->copy_multis($source->{'children'}, 'port-name');
+        if ((scalar @ports) > 1) {
+          $comment = "multiple \"port-name\" not supported";
+          last;
+        }
+        # source MAC
+        my $mac = $xcp->find_child($source->{'children'}, 'mac-address');
+        if (defined($mac)) {
+          $comment = "\"mac-address\" not supported";
+          last;
+        }
+        # negated addr
+        my $addr = $xcp->find_child($source->{'children'}, 'address');
+        if (defined($addr) && ($addr->{'value'} =~ /^"?\!/)) {
+          $comment = "negation of \"address\" not supported";
+          last;
+        }
+        # negated net
+        my $net = $xcp->find_child($source->{'children'}, 'network');
+        if (defined($net) && ($net->{'value'} =~ /^"?\!/)) {
+          $comment = "negation of \"network\" not supported";
+          last;
+        }
+      }
+      my $destination = $xcp->find_child($rule->{'children'}, 'destination');
+      if (defined($destination)) {
+        # multiple port-number
+        my @ports = $xcp->copy_multis($destination->{'children'},
+                                      'port-number');
+        if ((scalar @ports) > 1) {
+          $comment = "multiple \"port-number\" not supported";
+          last;
+        }
+        # multiple port-name
+        my @ports = $xcp->copy_multis($destination->{'children'}, 'port-name');
+        if ((scalar @ports) > 1) {
+          $comment = "multiple \"port-name\" not supported";
+          last;
+        }
+        # negated addr
+        my $addr = $xcp->find_child($destination->{'children'}, 'address');
+        if (defined($addr) && ($addr->{'value'} =~ /^"?\!/)) {
+          $comment = "negation of \"address\" not supported";
+          last;
+        }
+        # negated net
+        my $net = $xcp->find_child($destination->{'children'}, 'network');
+        if (defined($net) && ($net->{'value'} =~ /^"?\!/)) {
+          $comment = "negation of \"network\" not supported";
+          last;
+        }
+      }
+      my $desc = $xcp->find_child($rule->{'children'}, 'description');
+      if (defined($desc)) {
+        $comment = "per-rule description not supported";
+        last;
+      }
+    }
+    if (defined($comment)) {
+      $xcp->comment_out_child($fw_name->{'children'}, "rule $rule->{'name'}",
+                              $comment);
+    }
+  }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_firewall.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
+

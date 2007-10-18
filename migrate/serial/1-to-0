@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+# comment out unsupported commands
+my $intf_node = $xcp->get_node(['interfaces']);
+my $intf_children = $intf_node->{'children'};
+if (!defined($intf_children)) {
+  # no interfaces. nothing to do.
+  exit 0;
+}
+
+my $comment = '';
+
+sub check_serial {
+  my $if_ref = shift;
+  my @nodes_to_check = (
+                        't1-options mru', 'e1-options mru', 't3-options clock',
+                        'e3-options', 'ppp multilink', 'ppp lcp-echo-interval',
+                        'ppp lcp-echo-failure', 'ppp logging', 'ppp mtu',
+                        'ppp mru', 'ppp authentication refuse-type',
+                        'ppp authentication peer-user-id', 
+                        'ppp authentication peer-password', 
+                        'ppp authentication peer-system-name',
+                        'cisco-hdlc mtu', 'cisco-hdlc mru', 'frame-relay mtu', 
+                        'frame-relay mru', 'frame-relay signaling-options',
+                       );
+  for (@nodes_to_check) {
+    if ($xcp->node_exists_with_ref($if_ref, $_)) {
+      $comment .= "\n         \"$_\" not supported";
+    }
+  }
+  
+  my $auth_type = $xcp->get_node_with_ref($if_ref,
+                                          ['ppp', 'authentication', 'type']);
+  if (defined($auth_type)) {
+    if ($auth_type->{'value'} eq 'eap' || $auth_type->{'value'} eq 'any') {
+      $comment .= ("\n         \"ppp authentication type "
+                   . "$auth_type->{'value'}\" not supported");
+    }
+  }
+}
+
+foreach (@$intf_children) {
+  $comment = '';
+  my $if = $_->{'name'};
+  if ($if =~ /^serial /) {
+    check_serial($_);
+    if ($comment ne '') {
+      $comment =~ s/^[\n ]+//;
+      $xcp->comment_out_child($intf_children, $if, $comment);
+      next;
+    } else {
+      # no new options. make sure address is present.
+      my $addr = $xcp->get_node_with_ref($_, ['ppp', 'vif 1', 'address']);
+      if (defined($addr)) {
+        if ($xcp->node_exists_with_ref($addr, 'local-address')
+            && $xcp->node_exists_with_ref($addr, 'prefix-length')
+            && $xcp->node_exists_with_ref($addr, 'remote-address')) {
+          # config should be fine.
+          next;
+        }
+      }
+      # no 'address'. comment out.
+      $xcp->comment_out_child($intf_children, $if,
+                              "\"vif 1 address\" not defined");
+      next;
+    }
+  } elsif ($if =~ /^multilink /) {
+    my $children = $_->{'children'};
+    $xcp->comment_out_child($intf_children, $if,
+                            "\"multilink\" not supported");
+    next;
+  }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_serial.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
+

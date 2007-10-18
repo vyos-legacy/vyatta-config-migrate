@@ -1,0 +1,77 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+# comment out unsupported commands
+my $nat_node = $xcp->get_node(['service', 'nat']);
+my $nat_children = $nat_node->{'children'};
+my @nat_rules = $xcp->copy_multis($nat_children, 'rule');
+foreach my $rule (@nat_rules) {
+  my $comment = undef;
+  for (1 .. 1) {
+    my $proto = $xcp->find_child($rule->{'children'}, 'protocols');
+    if (defined($proto)) {
+      my $prot = $proto->{'value'};
+      $prot =~ s/^"(.*)"$/$1/;
+      if (($prot ne "tcp") && ($prot ne "udp") && ($prot ne "icmp")
+          && ($prot ne "all")) {
+        $comment = "protocol \"$prot\" not supported";
+        last;
+      }
+    }
+    my $source = $xcp->find_child($rule->{'children'}, 'source');
+    if (defined($source)) {
+      # negated addr
+      my $addr = $xcp->find_child($source->{'children'}, 'address');
+      if (defined($addr) && ($addr->{'value'} =~ /^"?\!/)) {
+        $comment = "negation of \"address\" not supported";
+        last;
+      }
+      # negated net
+      my $net = $xcp->find_child($source->{'children'}, 'network');
+      if (defined($net) && ($net->{'value'} =~ /^"?\!/)) {
+        $comment = "negation of \"network\" not supported";
+        last;
+      }
+    }
+    my $destination = $xcp->find_child($rule->{'children'}, 'destination');
+    if (defined($destination)) {
+      # negated addr
+      my $addr = $xcp->find_child($destination->{'children'}, 'address');
+      if (defined($addr) && ($addr->{'value'} =~ /^"?\!/)) {
+        $comment = "negation of \"address\" not supported";
+        last;
+      }
+      # negated net
+      my $net = $xcp->find_child($destination->{'children'}, 'network');
+      if (defined($net) && ($net->{'value'} =~ /^"?\!/)) {
+        $comment = "negation of \"network\" not supported";
+        last;
+      }
+    }
+  }
+  if (defined($comment)) {
+    $xcp->comment_out_child($nat_children, "rule $rule->{'name'}",
+                            $comment);
+  }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_nat.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
+

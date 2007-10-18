@@ -1,0 +1,89 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $VYATTA_CONFIG_DIR = "/opt/vyatta/etc/config-migrate";
+my $CURRENT_VERSION_DIR = "$VYATTA_CONFIG_DIR/current";
+my $SAVE_DIR = "/tmp/cfg-downgrade-$$";
+my $MIGRATE_SCRIPT = "/opt/vyatta/sbin/vyatta_config_migrate.pl";
+
+sub usage {
+  print <<'EOM';
+Usage: config-downgrade <cfg_file> <to_version>
+    <to_version>: a release name (e.g., '2.2') or a config version string.
+EOM
+  exit 1;
+}
+
+sub cleanup_save {
+  system("mv $SAVE_DIR/* $CURRENT_VERSION_DIR");
+  rmdir $SAVE_DIR;
+}
+
+my %ref_ver_str = (
+                    'camarillo' => 'dhcp-relay@1:dhcp-server@1:nat@1',
+                    '2.2' => 'dhcp-relay@1:dhcp-server@1:nat@1',
+                  );
+
+my $cfg_file = $ARGV[0];
+my $version = $ARGV[1];
+
+if (!defined($cfg_file) || !defined($version)) {
+  usage();
+}
+
+if (! -e $cfg_file) {
+  print "Config \"$cfg_file\" does not exist\n";
+  exit 1;
+}
+
+if (! -w $cfg_file) {
+  print "Config \"$cfg_file\" is not writable\n";
+  exit 1;
+}
+
+if (defined($ref_ver_str{$version})) {
+  $version = $ref_ver_str{$version};
+}
+
+if (!($version =~ /^[-a-z]+\@\d+(:[-a-z]+\@\d+)*$/)) {
+  print "Version string \"$version\" is invalid\n";
+  exit 1;
+}
+
+my @ver_files = split /:/, $version;
+
+# first save the current version files
+if (!(mkdir $SAVE_DIR)) {
+  print "Cannot create dir \"$SAVE_DIR\". Config not changed\n";
+  exit 1;
+}
+
+system("mv $CURRENT_VERSION_DIR/* $SAVE_DIR/");
+if ($? >> 8) {
+  print "Error: Cannot change $CURRENT_VERSION_DIR. Config not changed\n";
+  cleanup_save();
+  exit 1;
+}
+
+# create the target version files
+foreach (@ver_files) {
+  system("touch $CURRENT_VERSION_DIR/$_");
+  if ($? >> 8) {
+    print "Error: Cannot change $CURRENT_VERSION_DIR. Config not changed\n";
+    system("rm $CURRENT_VERSION_DIR/*");
+    cleanup_save();
+    exit 1;
+  }
+}
+
+# now migrate.
+system("$MIGRATE_SCRIPT $cfg_file");
+# any failure will be reported by the migrate script.
+
+# finally, restore the saved version files.
+system("rm $CURRENT_VERSION_DIR/*");
+cleanup_save();
+
+exit 0;
+

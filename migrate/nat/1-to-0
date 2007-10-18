@@ -1,0 +1,141 @@
+#!/usr/bin/perl
+
+use strict;
+
+my $config = shift;
+exit 1 if (!defined($config));
+my $tmpfile = "/tmp/vyatta_migrate_nat.$$";
+
+open(CONF, "<$config") or exit 1;
+open(NEW, ">$tmpfile") or exit 1;
+
+sub handle_nat_outside_range {
+  print NEW "/* \"range\" is not supported and "
+            . "has been commented out. */\n";
+  print NEW "/* === begin comment ===\n";
+  print NEW;
+  m/^([\t ]*)range/;
+  my $pre = $1;
+  my $lvl = 0;
+  my $stop = undef;
+  while (<CONF>) {
+    print NEW;
+    if (m/^[\t ]*stop: ([\d.]+)$/) {
+      $stop = $1;
+    } elsif (m/[\t ]{$/) {
+      $lvl++;
+    } elsif (m/^[\t ]*}$/) {
+      if ($lvl == 0) {
+        last;
+      }
+      $lvl--;
+    }
+  }
+  print NEW "=== end comment === */\n";
+  if (defined($stop)) {
+    print NEW "/* the following needs to be fixed manually */\n";
+    print NEW "${pre}address: $stop\n";
+  }
+}
+
+sub handle_nat_outside_prange {
+  print NEW "/* \"port-range\" is not supported and "
+            . "has been commented out. */\n";
+  print NEW "/* === begin comment ===\n";
+  print NEW;
+  my $lvl = 0;
+  while (<CONF>) {
+    print NEW;
+    if (m/[\t ]{$/) {
+      $lvl++;
+    } elsif (m/^[\t ]*}$/) {
+      if ($lvl == 0) {
+        last;
+      }
+      $lvl--;
+    }
+  }
+  print NEW "=== end comment === */\n";
+}
+
+sub handle_nat_outside {
+  print NEW;
+  my $lvl = 0;
+  while (<CONF>) {
+    if (m/^[\t ]*range {$/) {
+      handle_nat_outside_range($_);
+      next;
+    } elsif (m/^[\t ]*port-number \d+$/) {
+      my $str = $_;
+      chomp $str;
+      print NEW "/* \"port-number\" is not supported and "
+                . "has been commented out. */\n";
+      $str =~ s/(port.*$)/\/* $1 *\//;
+      print NEW "$str\n";
+      next;
+    } elsif (m/^[\t ]*port-range {$/) {
+      handle_nat_outside_prange($_);
+      next;
+    } elsif (m/[\t ]{$/) {
+      $lvl++;
+    } elsif (m/^[\t ]*}$/) {
+      if ($lvl == 0) {
+        print NEW;
+        last;
+      }
+      $lvl--;
+    }
+    print NEW;
+  }
+}
+
+sub migrate_type {
+  my $pre = shift;
+  my $type = shift;
+  my $ttype = ($type eq "masquerade") ? "masquerade" : "dynamic";
+  $type = ($type eq "masquerade") ? "source" : $type;
+  print NEW "$pre/* \"type\" and \"translation-type\" migrated */\n";
+  print NEW "${pre}type: \"$type\"\n";
+  print NEW "${pre}translation-type: \"$ttype\"\n";
+}
+
+sub handle_nat {
+  print NEW;
+  my $lvl = 0;
+  while (<CONF>) {
+    if (m/^[\t ]*(out|in)side-address {$/) {
+      handle_nat_outside($_);
+      next;
+    } elsif (m/^([\t ]*)type: "(.*)"$/) {
+      migrate_type($1, $2);
+      next;
+    } elsif (m/[\t ]{$/) {
+      $lvl++;
+    } elsif (m/^[\t ]*}$/) {
+      if ($lvl == 0) {
+        print NEW;
+        last;
+      }
+      $lvl--;
+    }
+    print NEW;
+  }
+}
+
+while (<CONF>) {
+  if (m/^[\t ]*nat {$/) {
+    handle_nat($_);
+    next;
+  }
+  print NEW;
+}
+
+## also need to generate fields that was mandatory in v0
+
+close NEW;
+close CONF;
+
+my $ret = system("mv $tmpfile $config");
+exit 1 if ($ret >> 8);
+
+exit 0;

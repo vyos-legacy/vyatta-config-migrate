@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# migrate config file to new DHCP server CLI syntax.
+# arg: <config_file>
+
+/opt/vyatta/sbin/XorpConfigMigrator.pl  --input=$1  --output=$1 --action=migrate_service_dhcp_server_0_to_1
+

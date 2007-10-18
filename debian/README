@@ -1,0 +1,6 @@
+The Debian Package vyatta-config-migrate
+----------------------------------------
+
+This package includes the Vyatta configuration migration scripts.
+
+ -- An-Cheng Huang <ancheng@vyatta.com>  Wed, 17 Oct 2007
