@@ -464,7 +464,7 @@ sub parse {
 			}
 #			print 'Comment is: "' . $comment_text . "\"\n";
 			$self->push_comment(\@path, $comment_text);
-		} elsif ($colon == 0 && ($c eq '{' || ($c eq ':' || (($c eq ' ' || $c eq "\t") && $cNext eq "\"")) || $c eq "\n")) {
+		} elsif ($colon == 0 && ($c eq '{' || ($c eq ':' && !($name =~ /\s/)) || $c eq "\n")) {
 			$name =~ s/^\s+|\s$//g;
 			if (length($name) > 0) {
 				push(@path, $name);
@@ -475,7 +475,7 @@ sub parse {
 				if ($c eq "\n") {
 					pop(@path);
 				}
-				if (($c eq ':') || (($c eq ' ' || $c eq "\t") && $cNext eq "\"")) {
+				if ($c eq ':') {
 					$colon = 1;
 				}
 			}
@@ -520,7 +520,9 @@ sub parse {
 				$colon = 0;
 			}
 		} else {
-			$name .= $c;
+			if ((length($name) > 0) || (!($c =~ /\s/))) {
+				$name .= $c;
+			}
 			$i++;
 		}
 	}
