@@ -46,6 +46,7 @@ while (<CONF>) {
 close CONF;
 my $backup_file = $config_file . "." . `date +%F-%H%M`;
 chomp $backup_file;
+$backup_file .= '.pre-migration';
 
 # get the current config version of each "module"
 my %cur_version = ();
