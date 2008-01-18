@@ -453,40 +453,7 @@ sub parse {
 		my $c = $array_contents[$i];
 		my $cNext = $array_contents[$i+1];
 
-		if ($c eq '/' && $cNext eq '*') {
-			my $comment_text = '';
-			my $comment_end = index($contents, '*/', $i+2);
-			if ($comment_end == -1) {
-				$comment_text = substr($contents, $i+2);
-			} else {
-				$comment_text = substr($contents, $i+2, $comment_end - $i - 2);
-				$i = $comment_end + 2;
-			}
-#			print 'Comment is: "' . $comment_text . "\"\n";
-			$self->push_comment(\@path, $comment_text);
-		} elsif ($colon == 0 && ($c eq '{' || ($c eq ':' && !($name =~ /\s/)) || $c eq "\n")) {
-			$name =~ s/^\s+|\s$//g;
-			if (length($name) > 0) {
-				push(@path, $name);
-#				print "Path is: \"@path\"    Name is: \"$name\"\n";
-				$self->set_value(\@path, $value);
-				$name = '';
-
-				if ($c eq "\n") {
-					pop(@path);
-				}
-				if ($c eq ':') {
-					$colon = 1;
-				}
-			}
-			$i++;
-		} elsif ($c eq '}') {
-			pop(@path);
-			$name = '';
-			$i++;
-		} elsif ($c eq ';') {
-			$i++;
-		} elsif ($colon == 1) {
+		if ($colon == 1) {
 			my $value_end = 0;
 			if ($c eq '"') {
 				$value .= $c;
@@ -519,6 +486,39 @@ sub parse {
 				$colon_quote = 0;
 				$colon = 0;
 			}
+		} elsif ($c eq '/' && $cNext eq '*') {
+			my $comment_text = '';
+			my $comment_end = index($contents, '*/', $i+2);
+			if ($comment_end == -1) {
+				$comment_text = substr($contents, $i+2);
+			} else {
+				$comment_text = substr($contents, $i+2, $comment_end - $i - 2);
+				$i = $comment_end + 2;
+			}
+#			print 'Comment is: "' . $comment_text . "\"\n";
+			$self->push_comment(\@path, $comment_text);
+		} elsif (($c eq '{' || ($c eq ':' && !($name =~ /\s/)) || $c eq "\n")) {
+			$name =~ s/^\s+|\s$//g;
+			if (length($name) > 0) {
+				push(@path, $name);
+#				print "Path is: \"@path\"    Name is: \"$name\"\n";
+				$self->set_value(\@path, $value);
+				$name = '';
+
+				if ($c eq "\n") {
+					pop(@path);
+				}
+				if ($c eq ':') {
+					$colon = 1;
+				}
+			}
+			$i++;
+		} elsif ($c eq '}') {
+			pop(@path);
+			$name = '';
+			$i++;
+		} elsif ($c eq ';') {
+			$i++;
 		} else {
 			if ((length($name) > 0) || (!($c =~ /\s/))) {
 				$name .= $c;
