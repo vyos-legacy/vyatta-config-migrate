@@ -445,6 +445,7 @@ sub parse {
 	my $length_contents = @array_contents;
 	my $colon = 0;
 	my $colon_quote = 0;
+	my $in_quote = 0;
 	my $name = '';
 	my $value = undef;
 	my @path;
@@ -486,7 +487,27 @@ sub parse {
 				$colon_quote = 0;
 				$colon = 0;
 			}
-		} elsif ($c eq '/' && $cNext eq '*') {
+			next;
+		}
+   
+		# ! $colon
+		# check for quotes 
+		if ($c eq '"') {
+			if ($in_quote) {
+				$in_quote = 0;
+			} else {
+				$in_quote = 1;
+			}
+			$name .= '"';
+			$i++;
+			next;
+		} elsif ($c eq '\\' && $cNext eq '"') {
+			$name .= '\\"';
+			$i += 2;
+			next;
+		}
+
+		if (!$in_quote && $c eq '/' && $cNext eq '*') {
 			my $comment_text = '';
 			my $comment_end = index($contents, '*/', $i+2);
 			if ($comment_end == -1) {
@@ -497,7 +518,8 @@ sub parse {
 			}
 #			print 'Comment is: "' . $comment_text . "\"\n";
 			$self->push_comment(\@path, $comment_text);
-		} elsif (($c eq '{' || ($c eq ':' && !($name =~ /\s/)) || $c eq "\n")) {
+		} elsif ((!$in_quote && $c eq '{')
+			 || ($c eq ':' && !($name =~ /\s/)) || $c eq "\n") {
 			$name =~ s/^\s+|\s$//g;
 			if (length($name) > 0) {
 				push(@path, $name);
@@ -513,11 +535,11 @@ sub parse {
 				}
 			}
 			$i++;
-		} elsif ($c eq '}') {
+		} elsif (!$in_quote && $c eq '}') {
 			pop(@path);
 			$name = '';
 			$i++;
-		} elsif ($c eq ';') {
+		} elsif (!$in_quote && $c eq ';') {
 			$i++;
 		} else {
 			if ((length($name) > 0) || (!($c =~ /\s/))) {
