@@ -1,3 +1,17 @@
+vyatta-config-migrate (0.2) unstable; urgency=low
+
+  vc4.0.0
+  [ Mark O'Brien ]
+
+
+  [ An-Cheng Huang ]
+  * fix for bug 2547: config file parser now handles new format (no
+    colons;         quotes used only for special characters).
+
+  [ Mark O'Brien ]
+
+ -- Mark O'Brien <mobrien@vyatta.com>  Mon, 25 Feb 2008 17:38:49 -0800
+
 vyatta-config-migrate (0.1) unstable; urgency=low
 
   * Initial Release.
