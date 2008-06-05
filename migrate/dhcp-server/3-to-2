@@ -1,0 +1,91 @@
+#!/usr/bin/perl
+#migrate from hollywood to glendale
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+# comment out unsupported commands
+my $hashServiceDhcpServer = $xcp->get_node(['service', 'dhcp-server']);
+if (defined($hashServiceDhcpServer)) {
+                
+ my $childrenServiceDhcpServer = $hashServiceDhcpServer->{'children'};
+ if (defined($childrenServiceDhcpServer)) {
+                        
+  foreach my $hashSNN (@$childrenServiceDhcpServer) {
+   
+   if ($hashSNN->{'name'} =~ /^dynamic-DNS-update.*/) {
+    $xcp->comment_out_node($hashSNN);
+   }
+   my $childrenSNN = $hashSNN->{'children'};
+   if (defined($childrenSNN)) {
+                                        
+    foreach my $hashSubnet (@$childrenSNN) {
+     my $childrenSubnet = $hashSubnet->{'children'};
+                                                
+     if (defined($childrenSubnet)) {
+                                                        
+      foreach my $child (@$childrenSubnet) {
+                                                                
+       if ($child->{'name'} =~ /^bootfile-name.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^failover.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^ip-forwarding.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^ntp-server.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^pop-server.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^smtp-server.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^static-route.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^tftp-server-name.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^time-offset.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^time-server.*/) {
+        $xcp->comment_out_node($child);
+       }
+       if ($child->{'name'} =~ /^wpad-url.*/) {
+        $xcp->comment_out_node($child);
+       }
+
+
+      }
+                        
+     }
+                                
+    }
+   }
+  }
+ }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_dhcp_server.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
+

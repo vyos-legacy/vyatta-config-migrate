@@ -280,32 +280,16 @@ sub migrate_service_dhcp_server_0_to_1 {
 	}
 }
 
-# This migration only involves commenting out the 'exclude' nodes.
+# do nothing as the current version for dhcp-server in glendale was still 1 
+# the version was not changed to 2 in glendale and so the code for migration never got executed
+# also, 'exclude' should have been removed from cli but was still on glendale, however, did nothing
+# code to comment out exclude has been removed now when upgrading to version 2
+# dhcp-server in glendale (still version 1) will get upgraded to version 2 
+# which does nothing and then 2 to hollywood (version 3) on upgrade from glendale to hollywood 
 sub migrate_service_dhcp_server_1_to_2 {
 	my ($file) = @_;
 	$xcp->parse($file);
 
-	my $hashServiceDhcpServer = $xcp->get_node(['service', 'dhcp-server']);
-	if (defined($hashServiceDhcpServer)) {
-		my $childrenServiceDhcpServer = $hashServiceDhcpServer->{'children'};
-		if (defined($childrenServiceDhcpServer)) {
-			foreach my $hashSNN (@$childrenServiceDhcpServer) {
-				my $childrenSNN = $hashSNN->{'children'};
-				if (defined($childrenSNN)) {
-					foreach my $hashSubnet (@$childrenSNN) {
-						my $childrenSubnet = $hashSubnet->{'children'};
-						if (defined($childrenSubnet)) {
-							foreach my $child (@$childrenSubnet) {
-								if ($child->{'name'} =~ /^exclude.*/) {
-									$xcp->comment_out_node($child);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 }
 
 # This migration involves no changes to the configuration.
