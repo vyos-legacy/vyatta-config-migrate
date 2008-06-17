@@ -1,3 +1,24 @@
+vyatta-config-migrate (0.10) unstable; urgency=low
+
+	  3.1.0
+  [ Mark O'Brien ]
+
+
+  [ Mohit Mehta ]
+  * removing the current version file for dhcp relay from this package
+    and adding that to vyatta-cfg-dhcp-relay like all other config
+    migration
+  * Config Migration for dhcp-server from glendale to hollywood and
+    vice-versa
+
+  [ rbalocca ]
+  * Ignore derived files
+  * Convert to our method of changelog creation
+
+  [ Mark O'Brien ]
+
+ -- Mark O'Brien <mobrien@firebolt.vyatta.com>  Tue, 17 Jun 2008 09:26:41 -0700
+
 vyatta-config-migrate (0.9) unstable; urgency=low
 
   3.0.5
