@@ -20,9 +20,13 @@ sub cleanup_save {
   rmdir $SAVE_DIR;
 }
 
+my $GLENDALE_VERSTR = 'cluster@1:dhcp-relay@1:dhcp-server@1:firewall@2:'
+                      . 'nat@2:serial@1:webgui@1';
 my %ref_ver_str = (
-                    'camarillo' => 'dhcp-relay@1:dhcp-server@1:nat@1',
-                    '2.2' => 'dhcp-relay@1:dhcp-server@1:nat@1',
+                    '3.0.5' => "$GLENDALE_VERSTR",
+                    '3.0.6' => "$GLENDALE_VERSTR",
+                    'VC4.0.1' => "$GLENDALE_VERSTR",
+                    'VC4.0.2' => "$GLENDALE_VERSTR",
                   );
 
 my $cfg_file = $ARGV[0];
