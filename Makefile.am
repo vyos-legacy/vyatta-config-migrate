@@ -19,6 +19,8 @@ cpiop = find  . ! -regex '\(.*~\|.*\.bak\|.*\.swp\|.*\#.*\#\)' -print0 | \
 # should be removed as the corresponding packages are moved to the new
 # packaging/build system.
 install-exec-hook:
+	mkdir -p $(DESTDIR)/usr/bin/
+	ln -sf /opt/vyatta/bin/config-downgrade $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)$(currentdir)
 	mkdir -p $(DESTDIR)$(migratedir)
 	( cd dummy-versions ; $(cpiop) $(DESTDIR)$(currentdir) )
