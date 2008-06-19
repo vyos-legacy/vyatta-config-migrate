@@ -108,12 +108,17 @@ foreach (sort (keys %cur_version)) {
       my $nxt_ver = ($conf_ver < $cur_ver) ? ($conf_ver + 1) : ($conf_ver - 1);
       print DBG "$mod: $conf_ver -> $nxt_ver\n" if ($dbg);
       my $cmd = "$MIGRATE_DIR/$mod/$conf_ver-to-$nxt_ver";
-      my ($ret, $err) = (-1, "Migration script does not exist");
+      my ($ret, $err) = (0, 'Migration script does not exist');
       if (-f $cmd) {
         $ret = system("$cmd $config_file");
         $err = $!;
+      } else {
+        # script does not exist. not an error (no-op).
+        print DBG "Config file migration: module=$mod "
+                  . "ver=$conf_ver nxt=$nxt_ver [$err]\n" if ($dbg);
       }
       if ($ret >> 8) {
+        # script execution failed
         syslog("warning",
                "Config file migration failed: module=%s ver=%s nxt=%s [%s]",
                $mod, $conf_ver, $nxt_ver, $err);
