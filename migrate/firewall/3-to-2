@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+# comment out unsupported commands
+my $fw_node = $xcp->get_node(['firewall']);
+my $fw_children = $fw_node->{'children'};
+my @fw_names = $xcp->copy_multis($fw_children, 'name');
+foreach my $fw_name (@fw_names) {
+  my @rules = $xcp->copy_multis($fw_name->{'children'}, 'rule');
+  foreach my $rule (@rules) {
+    my $comment = undef;
+    for (1 .. 1) {
+      my $action = $xcp->find_child($rule->{'children'}, 'action');
+      if (defined($action)) {
+        my $act = $action->{'value'};
+        if ($act eq 'inspect') {
+          $comment = "action \"$act\" not supported";
+          last;
+        }
+      }
+      my $ipsec = $xcp->find_child($rule->{'children'}, 'ipsec');
+      if (defined($ipsec)) {
+        $comment = "\"ipsec\" not supported";
+        last;
+      }
+    }
+    if (defined($comment)) {
+      $xcp->comment_out_child($fw_name->{'children'}, "rule $rule->{'name'}",
+                              $comment);
+    }
+  }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_firewall.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
+
