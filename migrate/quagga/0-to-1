@@ -1,0 +1,45 @@
+#!/usr/bin/perl
+
+use strict;
+
+#
+# replace:
+#
+#	interface-route 1.1.1.0/24 {
+#            blackhole {
+#            }
+#	}
+#
+# with:
+#
+#	route 1.1.1.0/24 {
+#            blackhole {
+#            }
+#	}
+
+my $config = shift;
+exit 1 if (!defined($config));
+my $tmpfile = "/tmp/vyatta_migrate_quagqa.$$";
+
+local($/, *FILE);  # slurp mode
+open FILE, "<", $config or die "Couldn't open $config\n";
+my $conf = <FILE>;
+close FILE;
+
+my $regex = qr/
+              interface-route
+              ([^b]+
+              blackhole)
+              /x;
+
+$conf =~ s/$regex/route$1/mg;
+
+open(NEW, ">$tmpfile") or exit 1;
+print NEW $conf;
+close NEW;
+close CONF;
+
+my $ret = system("mv $tmpfile $config");
+exit 1 if ($ret >> 8);
+
+exit 0;
