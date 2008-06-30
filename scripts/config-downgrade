@@ -10,7 +10,7 @@ my $MIGRATE_SCRIPT = "/opt/vyatta/sbin/vyatta_config_migrate.pl";
 sub usage {
   print <<'EOM';
 Usage: config-downgrade <cfg_file> <to_version>
-    <to_version>: a release name (e.g., '2.2') or a config version string.
+    <to_version>: a release name (e.g., '3.0.6') or a config version string.
 EOM
   exit 1;
 }
