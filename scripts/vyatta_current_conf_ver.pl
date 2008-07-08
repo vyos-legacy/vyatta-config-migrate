@@ -24,4 +24,15 @@ closedir CUR;
 print "\n\n/* Warning: Do not remove the following line. */\n";
 print "/* === vyatta-config-version: \"$version_str\" === */\n";
 
+# output "release" version. note that this may be unreliable after package
+# upgrades or downgrades.
+if (open(VER, "</opt/vyatta/etc/version")) {
+  my $line = <VER>;
+  if ($line =~ /^Version\s+:\s+(\S.*)$/) {
+    my $ver = $1;
+    print "/* Release version: $ver */\n";
+  }
+  close VER;
+}
+
 exit 0;
