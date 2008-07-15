@@ -4,18 +4,50 @@ use strict;
 
 #
 # replace:
-#
 #	interface-route 1.1.1.0/24 {
 #            blackhole {
 #            }
 #	}
-#
 # with:
-#
 #	route 1.1.1.0/24 {
 #            blackhole {
 #            }
 #	}
+sub migrate_blackhole {
+    my $conf = shift;
+
+    my $regex = qr/
+              interface-route
+              ([^b]+
+              blackhole)
+              /x;
+    
+    $conf =~ s/$regex/route$1/mg;
+    return $conf;
+}
+
+#
+# replace:
+#       authentication {
+#            simple-password asdf
+#       }
+# with:
+#       authentication {
+#            plaintext-password asdf
+#       }
+sub migrate_authentication {
+    my $conf = shift;
+
+    my $regex = qr/
+              (authentication
+              [^s]+)
+              simple-password
+              /x;
+    
+    $conf =~ s/$regex/$1plaintext-password/mg;
+    return $conf;
+}
+
 
 my $config = shift;
 exit 1 if (!defined($config));
@@ -26,13 +58,8 @@ open FILE, "<", $config or die "Couldn't open $config\n";
 my $conf = <FILE>;
 close FILE;
 
-my $regex = qr/
-              interface-route
-              ([^b]+
-              blackhole)
-              /x;
-
-$conf =~ s/$regex/route$1/mg;
+$conf = migrate_blackhole($conf);
+$conf = migrate_authentication($conf);
 
 open(NEW, ">$tmpfile") or exit 1;
 print NEW $conf;
