@@ -1,0 +1,5 @@
+#!/bin/sh
+
+sed -i '/tunnel tun/,/remote-ip/ { /rip/,/local-ip/ s/plaintext/simple/}' $1
+
+exit 0
