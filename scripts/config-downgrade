@@ -46,6 +46,12 @@ if (! -w $cfg_file) {
   exit 1;
 }
 
+my $uid = `echo \$UID`;
+if ($uid != 0) {
+    print "Must be root to run this program\n";
+    exit 1;
+}
+
 if (defined($ref_ver_str{$version})) {
   $version = $ref_ver_str{$version};
 }
