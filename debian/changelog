@@ -1,3 +1,24 @@
+vyatta-config-migrate (0.12) unstable; urgency=low
+
+	  3.1.2
+  [ Mark O'Brien ]
+
+
+  [ Bob Gilligan ]
+  * Bugfix: 3476
+
+  [ Stig Thormodsrud ]
+  * Fix 3456: config-downgrade does not modify RIP authentication
+  * Fix 3457: Configuration migration does not modify RIP authentication
+
+  [ An-Cheng Huang ]
+  * fix for bug 2361: add release version when saving config.
+  * fix for bug 3397: change help string
+
+  [ Mark O'Brien ]
+
+ -- Mark O'Brien <mobrien@firebolt.vyatta.com>  Wed, 23 Jul 2008 21:36:01 -0700
+
 vyatta-config-migrate (0.11) unstable; urgency=low
 
 	  3.1.1
