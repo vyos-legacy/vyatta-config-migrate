@@ -391,7 +391,7 @@ sub output {
 
 			print "    " x $depth;
 			if ($child->{'value'} ne '') {
-				print "$child->{'name'}: $child->{'value'}";
+				print "$child->{'name'} $child->{'value'}";
 				print "\n";
 			} else {
 				my $print_brackets = 0;
