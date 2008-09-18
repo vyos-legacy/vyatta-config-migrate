@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+
+# migration of dhcp-server when downgrading from islavista to hollywood
+# the following migration is to move the node 'authoritative' from
+# 'service dhcp-server shared-network-name <>' to 'service dhcp-server
+# shared-network-name <> subnet <>'. 
+
+# We check if a shared-network has 'authoritative enable'
+# If yes, all subnets under that shared-network,
+# have 'authoritative' with a value 'enable' else 
+# all subnets under that shared-network have 'authoritative disable'.
+
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my @SNN_authoritative;
+my $SNN_num = 0;
+
+my $hashServiceDhcpServer = $xcp->get_node(['service', 'dhcp-server']);
+
+# comment out authoritative under all shared-networks
+# get authoritative enable or disable per shared-network
+if (defined($hashServiceDhcpServer)) {
+
+ my $childrenServiceDhcpServer = $hashServiceDhcpServer->{'children'};
+
+ if (defined($childrenServiceDhcpServer)) {
+
+  foreach my $hashSNN (@$childrenServiceDhcpServer) {
+   if ($hashSNN->{'name'} =~ /^shared-network-name.*/) {
+
+   $SNN_authoritative[$SNN_num][0] = $hashSNN->{'name'};
+    my $childrenSNN = $hashSNN->{'children'};
+    if (defined($childrenSNN)) {
+
+     foreach my $hashSubnet (@$childrenSNN) {
+      if ($hashSubnet->{'name'} =~ /^authoritative.*/) {
+
+       if ($hashSubnet->{'name'} =~ /authoritative enable/) {
+        $SNN_authoritative[$SNN_num][1] = 1;
+       } else {
+        $SNN_authoritative[$SNN_num][1] = 0;
+       }
+
+       $xcp->comment_out_node($hashSubnet);
+      }
+     }
+    }
+    $SNN_num++;
+   }
+  }
+ }
+}
+
+# if 'authoritative enable' under shared-network
+# for all subnets under that shared-network
+# create node 'authoritative' with value 'enable'
+# else create node 'authoritative' with value 'disable'
+if (defined($hashServiceDhcpServer)) {
+
+ my $childrenServiceDhcpServer = $hashServiceDhcpServer->{'children'};
+ if (defined($childrenServiceDhcpServer)) {
+
+  foreach my $hashSNN (@$childrenServiceDhcpServer) {
+   if ($hashSNN->{'name'} =~ /^shared-network-name.*/) {
+
+    my $all_subnets_authoritative;
+    for my $i ( 0 .. $#SNN_authoritative ) {
+     if ($hashSNN->{'name'} eq $SNN_authoritative[$i][0]) {
+      $all_subnets_authoritative = $SNN_authoritative[$i][1];
+     }
+    }
+
+    my $childrenSNN = $hashSNN->{'children'};
+    if (defined($childrenSNN)) {
+
+     foreach my $hashSubnet (@$childrenSNN) {
+      if ($hashSubnet->{'name'} =~ /^subnet.*/) {
+
+       my @service_DHCP_server_snn_sub_auth = ('service', 'dhcp-server', $hashSNN->{'name'}, $hashSubnet->{'name'}, 'authoritative');
+       if ($all_subnets_authoritative == 1) {
+        $xcp->set_value(\@service_DHCP_server_snn_sub_auth, 'enable');
+       } else {
+         $xcp->set_value(\@service_DHCP_server_snn_sub_auth, 'disable');
+       }
+
+      }
+     }
+    }
+   }
+  }
+ }
+}
+
+
+my $tmpfile = "/tmp/vyatta_migrate_dhcp_server.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;

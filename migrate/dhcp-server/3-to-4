@@ -1,0 +1,83 @@
+#!/usr/bin/perl
+
+# migration for dhcp-server when upgrading from hollywood to islavista
+# the following migration is to move the node 'authoritative'
+# from being under 'service dhcp-server shared-network-name <> subnet <>'
+# to 'service dhcp-server shared-network-name <>'
+
+# We check if any 'subnet <>' under a shared-network has 
+# 'authoritative enable'. If yes, then 'authoritative' is 
+# moved under 'shared-network-name <>' with a value 'enable'
+# else it is moved with a value 'disable'.
+
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $hashServiceDhcpServer = $xcp->get_node(['service', 'dhcp-server']);
+if (defined($hashServiceDhcpServer)) {
+
+ my $childrenServiceDhcpServer = $hashServiceDhcpServer->{'children'};
+ if (defined($childrenServiceDhcpServer)) {
+
+  foreach my $hashSNN (@$childrenServiceDhcpServer) {
+
+   if ($hashSNN->{'name'} =~ /^shared-network-name.*/) {
+
+   my $one_subnet_authoritative = 0;
+
+    my $childrenSNN = $hashSNN->{'children'};
+    if (defined($childrenSNN)) {
+
+     foreach my $hashSubnet (@$childrenSNN) {
+      my $childrenSubnet = $hashSubnet->{'children'};
+
+      if (defined($childrenSubnet)) {
+
+       foreach my $child (@$childrenSubnet) {
+
+        if ($child->{'name'} =~ /^authoritative.*/) {
+           if ($child->{'name'} =~ /authoritative enable/) {
+              $one_subnet_authoritative = 1;
+           }
+           $xcp->comment_out_node($child);
+        }
+
+       }
+
+      }
+
+     }
+
+     my @service_DHCP_server_snn_auth = ('service', 'dhcp-server', $hashSNN->{'name'}, 'authoritative');
+     if ($one_subnet_authoritative == 1) {
+         $xcp->set_value(\@service_DHCP_server_snn_auth, 'enable');
+     } else {
+         $xcp->set_value(\@service_DHCP_server_snn_auth, 'disable');
+     }
+
+    }
+   }
+  }
+ }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_dhcp_server.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
