@@ -1,0 +1,55 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+# comment out unsupported commands
+my $nat_node = $xcp->get_node(['service', 'nat']);
+my $nat_children = $nat_node->{'children'};
+foreach my $rule (@$nat_children) {
+  my ($comment, $target, $type, $in, $out)
+    = (undef, undef, undef, undef, undef);
+  foreach my $o (@{$rule->{'children'}}) {
+    my $n = $o->{'name'};
+    if ($n =~ /^type (\w+)$/) {
+      $type = $1;
+    } elsif ($n =~ /^inbound-interface \w+$/) {
+      $in = $n;
+    } elsif ($n =~ /^outbound-interface \w+$/) {
+      $out = $n;
+    }
+  }
+  if (defined($type)) {
+    if (($type eq 'source' || $type eq 'masquerade') && defined($in)) {
+      $comment = 'cannot specify inbound interface with '
+                 . '"masquerade" or "source" rules';
+      $target = $in;
+    } elsif ($type eq 'destination' && defined($out)) {
+      $comment
+        = 'cannot specify outbound interface with "destination" rules';
+      $target = $out;
+    }
+  }
+  if (defined($comment)) {
+    $xcp->comment_out_child($rule->{'children'}, "$target", $comment);
+  }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_nat.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
+
