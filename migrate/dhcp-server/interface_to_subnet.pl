@@ -9,8 +9,8 @@ my $preflen;
 GetOptions("interface=s" => \$interface, "preflen" => \$preflen);
 
 
-use VyattaMisc;
-my $vm = new VyattaMisc();
+use Vyatta::Misc;
+my $vm = new Vyatta::Misc();
 
 use NetAddr::IP;  # This library is available via libnetaddr-ip-perl.deb
 my $naip = $vm->getNetAddrIP($interface);
