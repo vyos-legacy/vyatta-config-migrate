@@ -1,3 +1,21 @@
+vyatta-config-migrate (0.13) unstable; urgency=low
+
+	  3.2.0
+  [ Mark O'Brien ]
+
+
+  [ An-Cheng Huang ]
+  * fix for bug 3717: enforce interface restrictions
+  * fix for bug 3759: add version strings for hollywood.
+
+  [ Mohit Mehta ]
+  * - migration scripts for dhcp-server
+  * remove extraneous colon when creating a node on migration
+
+  [ Mark O'Brien ]
+
+ -- Mark O'Brien <mobrien@firebolt.vyatta.com>  Tue, 25 Nov 2008 19:09:40 -0800
+
 vyatta-config-migrate (0.12) unstable; urgency=low
 
 	  3.1.2
