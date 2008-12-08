@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 use strict;
-
+use lib "/opt/vyatta/share/perl5";
 
 use Getopt::Long;
 my $interface;
