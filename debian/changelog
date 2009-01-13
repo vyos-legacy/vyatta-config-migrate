@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.2) unstable; urgency=low
+
+  * test release
+
+ -- An-Cheng Huang <ancheng@build-vm.localdomain>  Tue, 13 Jan 2009 13:58:09 -0800
+
 vyatta-config-migrate (0.13.1-1) unstable; urgency=low
 
   * UNRELEASED
