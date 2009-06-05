@@ -1,0 +1,8 @@
+#! /bin/sh
+
+# Convert bridge disable existance back to a boolean
+# Since default is false, no need to convert that
+exec sed -i -e '/^[ 	  ]*bridge /,/}/s/disable$/disable true/' $1
+
+
+

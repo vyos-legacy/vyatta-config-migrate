@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# Convert bridge disable from a boolean to an existance node
+exec sed -i -e '/^[ 	  ]*bridge /,/}/{
+  s/disable true/disable/
+  /disable false/d
+}' $1
