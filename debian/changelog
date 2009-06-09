@@ -1,3 +1,10 @@
+vyatta-config-migrate (0.13.4) unstable; urgency=low
+
+  * Bugfix 4507: Handle move of "ip" parameters under "interfaces
+    multilink"
+
+ -- Bob Gilligan <gilligan@vyatta.com>  Tue, 09 Jun 2009 14:59:33 -0700
+
 vyatta-config-migrate (0.13.3) unstable; urgency=low
 
   * UNRELEASED
