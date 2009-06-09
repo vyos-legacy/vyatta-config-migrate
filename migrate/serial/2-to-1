@@ -1,0 +1,115 @@
+#!/usr/bin/perl
+#
+# Migration script to handle the move of:
+#
+#   interface multilink <ifname> vif 1 ip
+#
+# to:
+#
+#   interface multilink <ifname> ip
+#
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+# Enable/disable debug output.
+my $debug = undef;
+
+#
+# The output() function becomes unhappy if you give it a children
+# array that has an undefined entry in the middle.  That's true even
+# though the delete_child() function will do just that!  So, we clean
+# the array up right here.  This function squeezes out any undefined
+# entry in the array that is passed in.
+#
+sub compress_children_array {
+    my ($children) = @_;
+
+    my $from;
+    my $to;
+    for ($from = 0, $to = 0; $from < @$children; $from++) {
+	if (defined(@$children[$from])) {
+	    if ($from > $to) {
+		@$children[$to] = @$children[$from];
+	    }
+	    $to++;
+	}
+    }
+
+    for ( ; $to < $from ; $to++ ) {
+	@$children[$to] = undef;
+    }
+}
+
+if (defined($debug)){ printf("Starting...\n"); }
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $hashInterfaces = $xcp->get_node(['interfaces']);
+if (defined($hashInterfaces)) {
+    if (defined($debug)){ printf ("Found interfaces\n"); }
+
+    my $childrenInterfaces = $hashInterfaces->{'children'};
+    if (defined($childrenInterfaces)) {
+	# Iterate through the interfaces
+	foreach my $hashInterface (@$childrenInterfaces) {
+	    if (defined($debug)){ 
+		printf("Found interface: %s\n", $hashInterface->{'name'});
+	    }
+	    if ($hashInterface->{'name'} =~ /multilink/) {
+		my @ip_copy;
+		if (defined($debug)){ printf("Its a multilink\n"); }
+
+		my $ml_children = $hashInterface->{'children'};
+		
+		if (defined($ml_children)) {
+		    foreach my $hash_ml_child (@$ml_children) {
+			if ($hash_ml_child->{'name'} =~ /vif/) {
+			    # found a vif
+			    if (defined($debug)){ printf("Found vif\n"); }
+			    my $vif_children = $hash_ml_child->{'children'};
+			    my $ip_child;
+
+			    $ip_child = $xcp->find_child($vif_children, "ip");
+			    if (defined($ip_child)) {
+				if (defined($debug)){ printf("Found IP\n"); }
+				if (defined($debug)){ printf("Deleting IP\n"); }
+				# Pluck the "ip" tree from its current loc.
+				$xcp->delete_child($vif_children, "ip");
+				compress_children_array($vif_children);
+
+				# and put it directly under the ml node
+				push(@$ml_children, $ip_child);
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+} else {
+    if (defined($debug)){ printf("No interfaces multilink\n"); }
+}
+
+
+my $tmpfile = "/tmp/vyatta_migrate_serial.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+
+if (defined($debug)){ printf("Re-writing config file...\n"); }
+
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+if (defined($debug)){ printf("done!\n"); }
+
+exit 0;
