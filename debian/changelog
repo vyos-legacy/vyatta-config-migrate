@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.5) unstable; urgency=low
+
+  * Add migration script for bridge
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Wed, 28 Oct 2009 09:44:36 -0700
+
 vyatta-config-migrate (0.13.4) unstable; urgency=low
 
   * Bugfix 4507: Handle move of "ip" parameters under "interfaces
