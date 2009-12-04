@@ -1,0 +1,8 @@
+#! /bin/sh
+
+# Convert ssh allow-root from existance back to boolean
+# Since default is false, no need to convert that
+sed -i -e '/^[ 	  ]*ssh /,/}/s/allow-root$/allow-root true/' $1
+
+# Same for telnet
+sed -i -e '/^[ 	  ]*telnet /,/}/s/allow-root$/allow-root true/' $1

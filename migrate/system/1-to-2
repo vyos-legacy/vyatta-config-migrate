@@ -1,0 +1,13 @@
+#! /bin/sh
+
+# Convert ssh allow-root from boolean to an existance node
+sed -i -e '/^[ 	  ]*ssh /,/}/{
+  s/allow-root true/allow-root/
+  /allow-root false/d
+}' $1
+
+# Convert telnet allow-root from boolean to an existance node
+sed -i -e '/^[ 	  ]*telnet /,/}/{
+  s/allow-root true/allow-root/
+  /allow-root false/d
+}' $1
