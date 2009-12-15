@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.7) unstable; urgency=low
+
+  * Fix mode for config migration scripts
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Mon, 14 Dec 2009 19:36:11 -0800
+
 vyatta-config-migrate (0.13.6) unstable; urgency=low
 
   * Add migration scripts for system changes (ssh and telnet)
