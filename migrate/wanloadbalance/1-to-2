@@ -1,0 +1,78 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $target_value;
+
+my $lb_node = $xcp->get_node(['load-balancing', 'wan']);
+if (defined($lb_node)) {
+    my $lb_ih = $lb_node->{'children'};
+    if (defined($lb_ih)) {
+        # Iterate through the interfaces
+	foreach my $interfacehealth (@$lb_ih) {
+	    if ($interfacehealth->{'name'} =~ /^interface-health.*/) {
+		my $lb_target = $interfacehealth->{'children'};
+		if (defined($lb_target)) {
+		    foreach my $target (@$lb_target) {
+			if ($target->{'name'} =~ /^target.*/) {
+			    $target->{'name'} = "test 1 {\n\t\t$target->{'name'}\n\t    }";
+			}
+		    }
+		}
+	    }
+	}
+    }
+}
+
+
+#look for target and build new section
+
+
+
+###new configuration
+# wan {
+#     interface-health eth0 {
+#         nexthop 12.12.12.12
+
+#         test 1 {
+#	    target 9.9.9.9
+#            type ping
+#         }
+
+#     }
+# }
+
+
+
+
+###old configuration
+
+# wan {
+#    interface-health eth0 {
+#	nexthop 12.12.12.12
+
+#	target 9.9.9.9
+
+#	}
+#}
+
+
+my $tmpfile = "/tmp/vyatta_migrate_wanloadbalance.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
