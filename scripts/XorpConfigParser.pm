@@ -293,6 +293,25 @@ sub get_node {
 }
 
 #
+# Move a subtree from one place to another in hierarchy
+# Assumes both $from and $to exist
+# Returns undef if no match
+sub move_child {
+    my ($self, $from, $to, $name) = @_;
+    my $source = $from->{'children'};
+    my $destination = $to->{'children'};
+
+    for (my $i = 0; $i < @$source; $i++) {
+	my $match = @$source[$i];
+	next unless $match->{'name'} eq $name;
+	splice @$source, $i, 1;   # remove old list
+	push @$destination, $match;
+	return $match;
+    }
+    # no match return false (undef)
+}
+
+#
 # This method is used to insert a comment at a particular path.
 #
 #  $path	A reference to an array containing the path segments to the
