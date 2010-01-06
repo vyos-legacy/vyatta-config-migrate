@@ -299,12 +299,14 @@ sub get_node {
 sub move_child {
     my ($self, $from, $to, $name) = @_;
     my $source = $from->{'children'};
-    my $destination = $to->{'children'};
+    return unless $source;
 
     for (my $i = 0; $i < @$source; $i++) {
 	my $match = @$source[$i];
 	next unless $match->{'name'} eq $name;
 	splice @$source, $i, 1;   # remove old list
+
+	my $destination = $to->{'children'};
 	push @$destination, $match;
 	return $match;
     }
