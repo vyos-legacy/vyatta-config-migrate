@@ -268,8 +268,8 @@ sub get_node_with_ref {
 #
 sub get_node {
 	my ($self, $path) = @_;
-
 	my $hash = $self->{_data};
+
 	foreach my $segment (@$path) {
 		my $children = $hash->{'children'};
 		if (!defined($children)) {
@@ -371,57 +371,57 @@ sub set_value {
 sub output {
 	my ($self, $depth, $hash) = @_;
 
-	if (!defined($hash)) {
-		$hash = $self->{_data};
-	}
+	$hash = $self->{_data} unless $hash;
 
-	if ($hash->{'comment'} ne '') {
-		print '/*' . $hash->{'comment'} . "*/\n";
-	}
+	my $comment = $hash->{'comment'};
+	print '/*' . $comment . "*/\n"
+	    if $comment;
+
 	my $children = $hash->{'children'};
 	foreach my $child (@$children) {
-		if (defined($child)) {
-			if (defined($child->{'comment_out'})) {
-				print "\n";
-        if ($child->{'comment_out'} ne "1") {
-          print "/*   --- $child->{'comment_out'} ---   */\n";
-        }
-				print "/*   --- CONFIGURATION COMMENTED OUT DURING MIGRATION BELOW ---\n";
-			}
+	    next unless $child;
+	    my $name = $child->{'name'};
 
-			print "    " x $depth;
-			if ($child->{'value'} ne '') {
-				print "$child->{'name'} $child->{'value'}";
-				print "\n";
-			} else {
-				my $print_brackets = 0;
-				my $children = $child->{'children'};
-				if (defined($children) && @$children > 0) {
-					$print_brackets = 1;
-				} elsif ($child->{'name'} ne '' && !($child->{'name'} =~ /\s/))  {
-					$print_brackets = 1;
-				}
+	    my $comment_out = $child->{'comment_out'};
+	    if ($comment_out) {
+		print "\n";
+		print "/*   --- $comment_out ---   */\n"
+		    if ($comment_out ne "1");
+		print "/*   --- CONFIGURATION COMMENTED OUT DURING MIGRATION BELOW ---\n";
+	    }
 
-				if ($child->{'name'} ne '') {
-					print "$child->{'name'}";
-					if ($print_brackets) {
-						print " {";
-					}
-					print "\n";
-				}
-
-				$self->output($depth+1, $child);
-				if ($print_brackets) {
-					print "    " x $depth;
-					print "}\n";
-				}
-			}
-
-			if (defined($child->{'comment_out'})) {
-				print "     --- CONFIGURATION COMMENTED OUT DURING MIGRATION ABOVE ---  */\n\n";
-			}
-
+	    print "    " x $depth;
+	    my $value = $child->{'value'};
+	    if ($value) {
+		print "$name $value";
+		print "\n";
+	    } else {
+		my $print_brackets = 0;
+		my $children = $child->{'children'};
+		if (defined($children) && @$children > 0) {
+		    $print_brackets = 1;
+		} elsif (defined($name) && !($name =~ /\s/))  {
+		    $print_brackets = 1;
 		}
+
+		if ($name) {
+		    print "$name";
+		    if ($print_brackets) {
+			print " {";
+		    }
+		    print "\n";
+		}
+
+		$self->output($depth+1, $child);
+		if ($print_brackets) {
+		    print "    " x $depth;
+		    print "}\n";
+		}
+	    }
+
+
+	    print "     --- CONFIGURATION COMMENTED OUT DURING MIGRATION ABOVE ---  */\n\n"
+		if ($comment_out);
 	}
 }
 
