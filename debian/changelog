@@ -1,3 +1,17 @@
+vyatta-config-migrate (0.13.8) unstable; urgency=low
+
+  [ Michael Larson ]
+  * new migration script for WLB config.
+
+  [ Stephen Hemminger ]
+  * Fix use of uninitialized strings
+  * Add move_child to XorpConfigParser
+  * XorpConfigParser::move_child handle empty source
+  * XorpConfigParser: fix more perl warnings
+  * Add migration script to move protocols/snmp to service/snmp
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Tue, 05 Jan 2010 18:11:51 -0800
+
 vyatta-config-migrate (0.13.7) unstable; urgency=low
 
   * Fix mode for config migration scripts
