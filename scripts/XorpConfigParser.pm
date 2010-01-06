@@ -136,6 +136,7 @@ sub create_node {
 	my ($self, $path) = @_;
 
 	my $hash = \%data;
+SEGMENT:
 	foreach my $segment (@$path) {
 		my $children = $hash->{'children'};
 		if (!defined($children)) {
@@ -143,21 +144,20 @@ sub create_node {
 			$hash->{'children'} = \@new_children;
 			$children = \@new_children;
 		}
-		my $child_found = 0;
+
 		foreach my $child (@$children) {
-			if ($child->{'name'} eq $segment) {
-				$child_found = 1;
-				$hash = $child;
-				last;
-			}
+		    my $name = $child->{'name'};
+		    next unless $name;
+
+		    if ($name eq $segment) {
+			$hash = $child;
+			next SEGMENT;
+		    }
 		}
-		if ($child_found == 0) {
-			my %new_hash = (
-				'name' => $segment
-			);
-			push(@$children, \%new_hash);
-			$hash = \%new_hash;
-		}
+
+		my %new_hash = ( 'name' => $segment );
+		push @$children, \%new_hash;
+		$hash = \%new_hash;
 	}
 	return $hash;
 }
@@ -270,25 +270,26 @@ sub get_node {
 	my ($self, $path) = @_;
 	my $hash = $self->{_data};
 
+SEGMENT:
 	foreach my $segment (@$path) {
 		my $children = $hash->{'children'};
 		if (!defined($children)) {
 			return undef;
 		}
 
-		my $child_found = 0;
 		foreach my $child (@$children) {
-			if ($child->{'name'} eq $segment) {
-				$child_found = 1;
-				$hash = $child;
-				last;
-			}
+		    my $name = $child->{'name'};
+		    next unless $name;
+
+		    if ($name eq $segment) {
+			$hash = $child;
+			next SEGMENT;
+		    }
 		}
 
-		if ($child_found == 0) {
-			return undef;
-		}
+		return;	# no match
 	}
+
 	return $hash;
 }
 
