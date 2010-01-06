@@ -1,0 +1,36 @@
+#! /usr/bin/perl
+
+# migration of "protocols snmp" to "service snmp"
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $protocols = $xcp->get_node(['protocols']);
+exit 0 unless $protocols;	# no protocols in config
+
+my $service = $xcp->create_node(['service']);
+
+$xcp->move_child($protocols, $service, 'snmp') 
+    or exit 0; # no snmp in config
+
+my $tmpname = "/tmp/vyatta_migrate_system.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
