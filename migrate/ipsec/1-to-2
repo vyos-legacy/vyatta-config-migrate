@@ -1,0 +1,69 @@
+#! /usr/bin/perl
+
+# Starting Kenwood release - strongswan replaced openswan to provide ipsec
+# remove unsupported CLI parameters from configuration
+# CLI nodes to remove -
+# 'vpn ipsec logging facility <>'
+# 'vpn ipsec logging level <>'
+# 'vpn ipsec ike-group <group-name> aggressive-mode <>'
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $vpn_ipsec = $xcp->get_node(['vpn', 'ipsec']);
+exit 0 unless $vpn_ipsec; # vpn ipsec not configured
+
+# comment out 'logging facility' and 'logging level' nodes under 'vpn ipsec'
+my $hashVPNIPSeclog = $xcp->get_node(['vpn', 'ipsec', 'logging']);
+if (defined($hashVPNIPSeclog)) {
+  my $childrenVPNIPSeclog = $hashVPNIPSeclog->{'children'};
+  
+  if (defined($childrenVPNIPSeclog)) {
+    foreach my $hashVPNIPSeclognodes (@$childrenVPNIPSeclog) {
+      if ($hashVPNIPSeclognodes->{'name'} =~ /^facility.*/) {
+        $xcp->comment_out_node($hashVPNIPSeclognodes);
+      } 
+      if ($hashVPNIPSeclognodes->{'name'} =~ /^level.*/) {
+        $xcp->comment_out_node($hashVPNIPSeclognodes);
+      }
+    }
+  }
+}
+
+# comment out 'aggressive-mode' in all ike-groups under 'vpn ipsec'
+my $hashVPNIPSec = $xcp->get_node(['vpn', 'ipsec']);
+my $childrenVPNIPSec = $hashVPNIPSec->{'children'};
+if (defined($childrenVPNIPSec)) {
+  foreach my $hashikegrp (@$childrenVPNIPSec) {
+    my $childrenikegrp = $hashikegrp->{'children'};
+    if (defined($childrenikegrp)) {
+      foreach my $child (@$childrenikegrp) {
+        if ($child->{'name'} =~ /^aggressive-mode.*/) {
+          $xcp->comment_out_node($child);
+        }
+      }
+    }
+  }
+}
+
+my $tmpname = "/tmp/vyatta_migrate_vpn_ipsec.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
