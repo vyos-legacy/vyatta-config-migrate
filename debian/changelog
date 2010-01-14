@@ -1,3 +1,10 @@
+vyatta-config-migrate (0.13.9) unstable; urgency=low
+
+  * migration script to remove unsupported CLI params on upgrade to
+    Kenwood
+
+ -- Mohit Mehta <mohit.mehta@vyatta.com>  Thu, 14 Jan 2010 12:06:07 -0800
+
 vyatta-config-migrate (0.13.8) unstable; urgency=low
 
   [ Michael Larson ]
