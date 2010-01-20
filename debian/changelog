@@ -1,3 +1,11 @@
+vyatta-config-migrate (0.13.10) unstable; urgency=low
+
+  * Fix move_child in config parser to handle empty destination
+  * Cleanup config parser
+  * Migrate SNMP trap when doing downgrade
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Wed, 20 Jan 2010 09:55:32 -0800
+
 vyatta-config-migrate (0.13.9) unstable; urgency=low
 
   * migration script to remove unsupported CLI params on upgrade to
