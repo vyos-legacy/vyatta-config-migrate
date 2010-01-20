@@ -307,8 +307,14 @@ sub move_child {
 	next unless $match->{'name'} eq $name;
 	splice @$source, $i, 1;   # remove old list
 
-	my $destination = $to->{'children'};
-	push @$destination, $match;
+	my $children = $to->{'children'};
+	unless ($children) {
+	    my @new_children;
+	    $to->{'children'} = \@new_children;
+	    $children = \@new_children;
+	}
+
+	push @$children, $match;
 	return $match;
     }
     # no match return false (undef)
