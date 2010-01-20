@@ -9,19 +9,35 @@ use lib "/opt/vyatta/share/perl5/";
 use XorpConfigParser;
 use File::Copy;
 
+# SNMP trap target was leaf node in earlier release
+#
+sub cleanup_traps {
+    my $snmp = shift;
+    my $children = $snmp->{'children'};
+    return unless $children;
+
+    foreach my $trap (@$children) {
+	next unless ($trap->{'name'} =~ /^trap-target /);
+	$trap->{'children'} = undef;
+    }
+}
+
 my $orig_cfg = shift;
-exit 1 unless $orig_cfg;
+die "missing config file argument\n"
+    unless $orig_cfg;
 
 my $xcp = new XorpConfigParser();
 $xcp->parse($orig_cfg);
 
-my $service = $xcp->get_node(['service']);
-exit 0 unless $service;
+my $snmp = $xcp->get_node(['service','snmp']);
+exit 0 unless $snmp;
 
-my $protocols = $xcp->create_node(['protocols']);
+cleanup_traps ($snmp);
 
-$xcp->move_child($service, $protocols, 'snmp') 
-    or exit 0; # no snmp in config
+$xcp->move_child($xcp->get_node(['service']),
+		 $xcp->create_node(['protocols']),
+		 'snmp') 
+    or die "Move of service snmp to protocols failed";
 
 my $tmpname = "/tmp/vyatta_migrate_system.$$";
 open (my $tmp, '>', $tmpname)
