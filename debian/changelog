@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.11) unstable; urgency=low
+
+  * Silently drop broken serial/qos-policy during migration
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Fri, 29 Jan 2010 15:23:09 -0800
+
 vyatta-config-migrate (0.13.10) unstable; urgency=low
 
   * Fix move_child in config parser to handle empty destination
