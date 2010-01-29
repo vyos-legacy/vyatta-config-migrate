@@ -24,6 +24,7 @@ my $debug = undef;
 # the array up right here.  This function squeezes out any undefined
 # entry in the array that is passed in.
 #
+# XXX delete_child should use splice.
 sub compress_children_array {
     my ($children) = @_;
 
@@ -62,30 +63,34 @@ if (defined($hashInterfaces)) {
 	    if (defined($debug)){ 
 		printf("Found interface: %s\n", $hashInterface->{'name'});
 	    }
+	    my $children = $hashInterface->{'children'};
 	    if ($hashInterface->{'name'} =~ /multilink/) {
-		my @ip_copy;
 		if (defined($debug)){ printf("Its a multilink\n"); }
 
-		my $ml_children = $hashInterface->{'children'};
-		
-		if (defined($ml_children)) {
-		    my $ip_child;
-
-		    $ip_child = $xcp->find_child($ml_children, "ip");
+		if (defined($children)) {
+		    my $ip_child = $xcp->find_child($children, "ip");
 		    if (defined($ip_child)) {
 			if (defined($debug)){ printf("Found IP\n"); }
 			if (defined($debug)){ printf("Deleting IP\n"); }
-			$xcp->delete_child($ml_children, "ip", 
-					   "moved");
-			compress_children_array($ml_children);
+			$xcp->delete_child($children, "ip", "moved");
+			compress_children_array($children);
 			my $vif = 
-			    $xcp->find_child($ml_children, "vif 1");
+			    $xcp->find_child($children, "vif 1");
 			if (defined($vif)) {
 			    if (defined($debug)){ printf("Found vif\n"); }
 			    my $vif_children = $vif->{'children'};
 			    push(@$vif_children, $ip_child);
 			}
 		    }
+		}
+	    } elsif ($hashInterface->{'serial'} eq 'serial') {
+		# interfaces/serial/X/qos-policy was a mistake introduced
+		# in islavista but later removed
+		my $qos_child = $xcp->find_child($children, "qos-policy");
+		if (defined($qos_child)) {
+		    $xcp->delete_child($children, "qos-policy",
+				       "not implemented");
+		    compress_children_array($children);
 		}
 	    }
 	}
@@ -96,12 +101,12 @@ if (defined($hashInterfaces)) {
 
 
 my $tmpfile = "/tmp/vyatta_migrate_serial.$$";
-open(TMPFILE, ">$tmpfile") or exit 1;
-select TMPFILE;
+open (my $tmp, '>', $tmpfile)
+    or die "Can't open $tmpfile: $!";
 
+select $tmp;
 $xcp->output(0);
-
-close TMPFILE;
+close $tmp;
 
 if (defined($debug)){ printf("Re-writing config file!\n"); }
 
