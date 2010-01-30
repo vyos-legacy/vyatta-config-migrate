@@ -7,6 +7,8 @@
 # 'vpn ipsec logging level <>'
 # 'vpn ipsec ike-group <group-name> aggressive-mode <>'
 
+# Also, remove 'vpn ipsec copy-tos <>'; See Bug 1832
+
 use strict;
 use warnings;
 
@@ -40,11 +42,15 @@ if (defined($hashVPNIPSeclog)) {
   }
 }
 
+# comment out 'copy-tos' field under 'vpn ipsec'
 # comment out 'aggressive-mode' in all ike-groups under 'vpn ipsec'
 my $hashVPNIPSec = $xcp->get_node(['vpn', 'ipsec']);
 my $childrenVPNIPSec = $hashVPNIPSec->{'children'};
 if (defined($childrenVPNIPSec)) {
   foreach my $hashikegrp (@$childrenVPNIPSec) {
+    if ($hashikegrp->{'name'} =~ /^copy-tos.*/) {
+      $xcp->comment_out_node($hashikegrp);
+    }
     my $childrenikegrp = $hashikegrp->{'children'};
     if (defined($childrenikegrp)) {
       foreach my $child (@$childrenikegrp) {
