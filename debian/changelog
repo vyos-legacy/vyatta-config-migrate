@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.13) unstable; urgency=low
+
+  * Bugfix 5223: Add serial config migration scripts.
+
+ -- Bob Gilligan <gilligan@vyatta.com>  Tue, 09 Feb 2010 11:40:30 -0800
+
 vyatta-config-migrate (0.13.12) unstable; urgency=low
 
   * remove copy-tos as it's not supposed to work with NETKEY
