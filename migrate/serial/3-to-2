@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Version 3 removed parameters that were not being used, so there is
+# no change needed when downgrading serial from version 3 to version 2.
+#
+exit 0
+

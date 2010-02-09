@@ -1,0 +1,192 @@
+#!/usr/bin/perl
+#
+# Migration script to handle the removal of the following six parameters:
+#
+# interfaces/serial/node.tag/cisco-hdlc/mru/node.def
+# interfaces/serial/node.tag/frame-relay/mru/node.def
+# interfaces/serial/node.tag/t1-options/mru/node.def
+# interfaces/serial/node.tag/t1-options/mtu/node.def
+# interfaces/serial/node.tag/e1-options/mru/node.def
+# interfaces/serial/node.tag/e1-options/mtu/node.def
+#
+# These parameters are no longer used by the serial subsystem.  They
+# were removed from the configuration under bugs 3336 and 3340.
+#
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use Getopt::Long;
+
+# Enable/disable debug output.  Run with "--debug" to enable.
+my $debug;
+
+GetOptions("debug"	=> \$debug);
+
+sub dprintf {
+    my ($args) = @_;
+    if ($debug) {
+	printf(STDERR $args);
+    }
+}
+
+#
+# The output() function becomes unhappy if you give it a children
+# array that has any undefined entries in the middle.  This function
+# gets rid of them.
+#
+sub compress_children_array {
+    my ($children_ar) = @_;
+
+    return if (!defined($children_ar));
+
+    dprintf("Compressing children array.\n");
+
+    my $from;
+    my $to;
+    for ($from = 0, $to = 0; $from < @$children_ar; $from++) {
+	if (defined(@$children_ar[$from])) {
+	    if ($from > $to) {
+		@$children_ar[$to] = @$children_ar[$from];
+	    }
+	    $to++;
+	}
+    }
+
+    for ( ; $to < $from ; $to++ ) {
+	@$children_ar[$to] = undef;
+    }
+}
+
+#
+# Delete all leaf nodes in a children array whose name starts with the match
+# string provided.
+#
+sub del_leaves_with {
+    my ($children, $match_string) = @_;
+    my $num_deletes = 0;
+
+    if (!defined($children)) {
+	dprintf("Children undefined in del_leaves_with\n");
+	return $num_deletes;
+    }
+
+    for ( my $i = 0 ; $i < @$children ; $i++ ) {
+	if (!defined(@$children[$i])) {
+	    next;
+	}
+        my $stringNodeNameHere = @$children[$i]->{'name'};
+	dprintf("Comparing against $stringNodeNameHere \n");
+        if ($stringNodeNameHere =~ /$match_string/) {
+	    dprintf("Deleting $stringNodeNameHere \n");
+            @$children[$i] = undef;
+	    $num_deletes++;
+        }
+    }
+    if ($num_deletes > 0) {
+	compress_children_array($children);
+    }
+    return $num_deletes;
+}
+
+#
+# Main section
+#
+dprintf("Starting...\n");
+
+my $orig_cfg = shift;
+if (!defined($orig_cfg)) {
+    dprintf("Error: No config file provided!\n");
+    exit 1;
+}
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $hashInterfaces = $xcp->get_node(['interfaces']);
+if (!defined($hashInterfaces)) {
+    dprintf("No interfaces found.\n");
+    exit 0;
+}
+
+dprintf ("Found interfaces\n");
+
+my $childrenInterfaces = $hashInterfaces->{'children'};
+if (!defined($childrenInterfaces)) {
+    dprintf("No children of interfaces found.\n");
+    exit 0;
+}
+
+# Iterate through the interfaces
+my $total_deletes = 0;
+foreach my $hashInterface (@$childrenInterfaces) {
+    dprintf("Found interface: $hashInterface->{'name'}\n");
+
+    if ($hashInterface->{'name'} =~ /serial/) {
+	dprintf("Its serial\n");
+
+	my $children_serial = $hashInterface->{'children'};
+	if (defined($children_serial)) {
+	    foreach my $child (@$children_serial) {
+		if ($child->{'name'} eq "cisco-hdlc") {
+		    dprintf("Its cisco-hdlc\n");
+		    $total_deletes += 
+			del_leaves_with($child->{'children'}, "mru");
+		}
+
+		if ($child->{'name'} eq "frame-relay") {
+		    dprintf("Its frame-relay\n");
+		    $total_deletes +=
+			del_leaves_with($child->{'children'}, "mru");
+		}
+		
+		if ($child->{'name'} eq "t1-options") {
+		    dprintf("Its t1-options\n");
+		    $total_deletes +=
+			del_leaves_with($child->{'children'}, "mru");
+		    $total_deletes +=
+			del_leaves_with($child->{'children'}, "mtu");
+		}
+
+		if ($child->{'name'} eq "e1-options") {
+		    dprintf("Its e1-options\n");
+		    $total_deletes +=
+			del_leaves_with($child->{'children'}, "mru");
+		    $total_deletes +=
+			del_leaves_with($child->{'children'}, "mtu");
+		}
+	    }
+	}
+    }
+}
+
+dprintf("$total_deletes nodes deleted\n");
+
+# Don't bother re-writing the config file if we have not changed anything.
+if ($total_deletes == 0) {
+    exit 0;
+}
+
+dprintf("Opening temp file...\n");
+
+my $tmpfile = "/tmp/vyatta_migrate_serial.$$";
+open (my $tmp, '>', $tmpfile)
+    or die "Can't open $tmpfile: $!";
+
+dprintf("Writing temp file...\n");
+
+select $tmp;
+$xcp->output(0);
+close $tmp;
+
+dprintf("Moving temp file...\n");
+
+my $ret = system("mv $tmpfile $orig_cfg");
+if ($ret >> 8) {
+    dprintf("Error: Can't move temp file.\n");
+    exit 1;
+}
+
+dprintf("Done!\n");
+
+exit 0;
