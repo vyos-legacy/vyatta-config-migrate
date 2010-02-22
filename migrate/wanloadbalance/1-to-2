@@ -20,12 +20,42 @@ if (defined($lb_node)) {
 	foreach my $interfacehealth (@$lb_ih) {
 	    if ($interfacehealth->{'name'} =~ /^interface-health.*/) {
 		my $lb_target = $interfacehealth->{'children'};
+		my $new_target = undef;
+		my $new_resptime = undef;
 		if (defined($lb_target)) {
 		    foreach my $target (@$lb_target) {
-			if ($target->{'name'} =~ /^target.*/) {
-			    $target->{'name'} = "test 1 {\n\t\t$target->{'name'}\n\t    }";
+			if ($target->{'name'} =~ /^ping.*/) {
+                            my (undef,$t) = split " ",$target->{'name'};
+			    $new_target = "target $t\n\t\ttype ping\n";
+			    $xcp->comment_out_node($target);
 			}
+                        if ($target->{'name'} =~ /^resp-time.*/) {
+			    $new_resptime = $target->{'name'};
+			    $xcp->comment_out_node($target);
+                        }
 		    }
+
+		    #now piece together the new config
+		    my $new_conf = undef;
+		    if (defined $new_target && defined $new_resptime) {
+			$new_conf = "{\n\t\t$new_target\t\t$new_resptime\n\t    }\n";
+		    }
+		    elsif (defined $new_target) {
+			$new_conf = "{\n\t\t$new_target\n\t    }\n";
+		    }
+		    elsif (defined $new_resptime) {
+			$new_conf = "{\n\t\t$new_resptime\n\t    }\n";
+		    }
+		    else {
+			#nothing
+		    }
+
+		    if (defined $new_conf) {
+			my @load_balancing_wan_interfacehealth = ('load-balancing', 'wan', $interfacehealth->{'name'}, 'test 1');
+			$xcp->set_value(\@load_balancing_wan_interfacehealth, $new_conf);
+		    }
+
+
 		}
 	    }
 	}
