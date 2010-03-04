@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.16) unstable; urgency=low
+
+  * Add migration script for bug 5387.
+
+ -- Stig Thormodsrud <stig@vyatta.com>  Wed, 03 Mar 2010 17:34:11 -0800
+
 vyatta-config-migrate (0.13.15) unstable; urgency=low
 
   * fix for bug 5369
