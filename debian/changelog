@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.13+kenwood2) unstable; urgency=low
+
+  * fix for bug 5369
+
+ -- Michael Larson <slioch@slioch.vyatta.com>  Fri, 05 Mar 2010 16:11:58 -0800
+
 vyatta-config-migrate (0.13.13+kenwood1) unstable; urgency=low
 
   * UNRELEASED
