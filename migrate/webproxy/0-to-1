@@ -1,16 +1,13 @@
 #! /bin/sh
 
-# Convert ssh allow-root from boolean to an existance node
 sed -i -e '/^[       ]*squidguard /,/}/{
   s/auto-update daily/auto-update \{\n update-hour 1 \n\}/
 }' $1
 
-# Convert ssh allow-root from boolean to an existance node
 sed -i -e '/^[       ]*squidguard /,/}/{
   s/auto-update weekly/auto-update \{\n update-hour 1 \n\}/
 }' $1
 
-# Convert ssh allow-root from boolean to an existance node
 sed -i -e '/^[       ]*squidguard /,/}/{
   s/auto-update monthly/auto-update \{\n update-hour 1 \n\}/
 }' $1

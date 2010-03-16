@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $sg = $xcp->get_node(['service', 'webproxy', 'url-filtering', 'squidguard']);
+exit 0 unless $sg;
+
+my $sgC = $sg->{'children'};
+if (defined($sgC)) {
+   foreach my $hashSNN (@$sgC) {
+       if ($hashSNN->{'name'} =~ /^auto-update/) {
+           my @new_node = ('service', 'webproxy', 'url-filtering', 'squidguard', 'auto-update');
+           $xcp->set_value(\@new_node, 'daily');
+       }
+   }
+}
+
+my $tmpfile = "/tmp/vyatta_migrate_webproxy.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+
+my $ret;
+$ret = system("rm -f /etc/cron.monthly/vyatta-update-urlfilter");
+$ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
