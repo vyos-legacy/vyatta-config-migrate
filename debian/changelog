@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.17) unstable; urgency=low
+
+  * Add downgrade migrations script for update-hour to daily.
+
+ -- Stig Thormodsrud <stig@vyatta.com>  Tue, 16 Mar 2010 15:16:48 -0700
+
 vyatta-config-migrate (0.13.16) unstable; urgency=low
 
   * Add migration script for bug 5387.
