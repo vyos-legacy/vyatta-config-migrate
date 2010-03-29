@@ -1,0 +1,4 @@
+#! /bin/sh
+
+# Convert rate-limiter to rate-control
+sed -i -e '/^[ 	  ]*qos-policy /,/}/s/rate-limiter/rate-control/' $1
