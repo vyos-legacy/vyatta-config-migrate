@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.18) unstable; urgency=low
+
+  * Add qos migration scripts
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Mon, 29 Mar 2010 16:45:44 -0700
+
 vyatta-config-migrate (0.13.17) unstable; urgency=low
 
   * Add downgrade migrations script for update-hour to daily.
