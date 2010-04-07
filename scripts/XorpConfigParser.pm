@@ -282,7 +282,7 @@ sub move_child {
         return $match;
     }
 
-    # no match return false (undef)
+    return;
 }
 
 #
