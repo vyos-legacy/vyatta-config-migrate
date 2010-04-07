@@ -1,0 +1,102 @@
+#! /usr/bin/perl
+
+# move traffic-limiter to input-policy limit
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+# Find traffic-limiter qos-policy (if any)
+my $qospolicy = $xcp->get_node(['qos-policy']);
+exit 1 unless $qospolicy;
+
+# The meat of the migration
+# qos-policy in foo => input-policy ...
+# qos-policy out bar => qos-policy bar
+sub qos_policy {
+    my ($parent, $qos) = @_;
+    my $children = $qos->{'children'};
+    my ($outpolicy, $inpolicy);
+
+    foreach my $node (@$children) {
+	if ($node->{'name'} =~ /^out (.*)$/) {
+	    $outpolicy = $1;
+	} elsif ($node->{'name'} =~ /^in (.*)$/) {
+	    my $in = $1;
+	    $inpolicy = $xcp->find_child($qospolicy->{'children'},
+					 "traffic-limiter $in");
+	}
+    }
+
+    $xcp->comment_out_node($qos);
+
+    $children = $parent->{'children'};
+    if ($outpolicy) {
+	my %qos_policy = ( 'name' => "qos-policy $outpolicy" );
+	push @$children, \%qos_policy;
+    }
+
+    if ($inpolicy) {
+	# This copies the tree under inpolicy to new input-policy limit
+	my $limitp    = { 'name' => 'limit', 'children' => [] };
+	my $newpolicy = { 'name' => 'input-policy', 'children' => [ $limitp ] };
+
+	$xcp->copy_node($inpolicy->{'children'}, $limitp->{'children'}, "");
+	push @$children, $newpolicy;
+    }
+}
+
+# Recursively search interface tree for qos-policy
+sub migrate_interface {
+    my $parent = shift;
+    my $children = $parent->{'children'};
+    return unless $children;
+
+    foreach my $node (@$children) {
+	my $name = $node->{'name'};
+
+	if ($name eq 'qos-policy') {
+	    qos_policy($parent, $node);
+	} else {
+	    migrate_interface($node);
+	}
+    }
+}
+
+# This comments out any left over traffic-limiter policies
+sub purge_limiter {
+    my $children = $qospolicy->{'children'};
+
+    foreach my $node (@$children) {
+	next unless ($node->{'name'} =~ '^traffic-limiter ');
+	$xcp->comment_out_node($node);
+    }
+}
+
+my $interfaces = $xcp->get_node(['interfaces']);
+exit 1 unless $interfaces;
+
+migrate_interface($interfaces);
+
+purge_limiter();
+
+my $tmpname = "/tmp/vyatta_migrate_qos.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
