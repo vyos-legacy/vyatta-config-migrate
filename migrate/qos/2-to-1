@@ -1,0 +1,99 @@
+#! /usr/bin/perl
+
+# move traffic-limiter to input-policy limit
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $incount = 0;
+my @traffic_limiters;
+
+# move any input-policy limit to traffic-limiter
+# comment out redirect and mirror actions
+sub migrate_interface {
+    my $parent = shift;
+    my $children = $parent->{'children'};
+    return unless $children;
+
+    my ($inpolicy, $outpolicy);
+
+    foreach my $node (@$children) {
+	my $name = $node->{'name'};
+
+	if ($name eq 'input-policy') {
+	    $inpolicy = $node;
+	} elsif ($name =~ /^qos-policy\s(\S+)/) {
+	    $outpolicy = $1;
+	} else {
+	    migrate_interface($node);
+	}
+    }
+
+    my @qos;
+    if ($inpolicy) {
+	my $name = "input_policy_$incount";
+	++$incount;
+
+	my $in = { 'name' => "in $name" };
+	push @qos, $in;
+	
+	my $lcp = [];
+	$xcp->copy_node($inpolicy->{'children'}, $lcp, "limit");
+	$xcp->comment_out_node($inpolicy);
+	
+	my $tl = { 'name' => "traffic-limiter $name" };
+
+	# kidnap the children from copy of input-policy limit
+	foreach my $child (@$lcp) {
+	    next unless ($child->{'name'} eq 'limit');
+	    $tl->{'children'} = $child->{'children'};
+	}
+	push @traffic_limiters, $tl;
+    }
+
+    if ($outpolicy) {
+	my $out = { 'name' => "out $outpolicy" };
+	push @qos, $out;
+	$xcp->delete_child($children, 'qos-policy');
+    }
+    
+    return if $#qos < 0;
+
+    my $qos_policy = { 'name' => 'qos-policy', 'children' => \@qos };
+    push @$children, $qos_policy;
+}
+
+my $interfaces = $xcp->get_node(['interfaces']);
+exit 1 unless $interfaces;
+
+migrate_interface($interfaces);
+
+if (@traffic_limiters) {
+    my $qos_policy = $xcp->create_node(['qos-policy']);
+    my $policies = $qos_policy->{'children'};
+    push @$policies, @traffic_limiters;
+}
+
+my $tmpname = "/tmp/vyatta_migrate_qos.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+
+
