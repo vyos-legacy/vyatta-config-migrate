@@ -1,3 +1,11 @@
+vyatta-config-migrate (0.13.19) unstable; urgency=low
+
+  * Add return to move_child
+  * Add config migration for new Qos format
+  * change mode
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Wed, 07 Apr 2010 09:13:56 -0700
+
 vyatta-config-migrate (0.13.18) unstable; urgency=low
 
   * Add qos migration scripts
