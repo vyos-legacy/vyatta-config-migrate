@@ -2,7 +2,9 @@
 
 use lib "/opt/vyatta/share/perl5/";
 
-package XorpConfigParser;
+#package XorpConfigParser;
+
+use Data::Dumper;
 
 use strict;
 
@@ -44,6 +46,7 @@ sub copy_node {
                     $nodeCheck->{'value'}    = $node->{'value'};
                     $nodeCheck->{'children'} = $node->{'children'};
                     $nodeCheck->{'comment'}  = $node->{'comment'};
+                    $nodeCheck->{'disable'}  = $node->{'disable'};
                     return;
                 }
             }
@@ -74,6 +77,7 @@ sub copy_multis {
                 'name'     => $stringNameHere,
                 'comment'  => $node->{'comment'},
                 'value'    => $node->{'value'},
+                'disable'  => $node->{'disable'},
                 'children' => $node->{'children'}
             );
             push( @multis, \%multi );
@@ -349,6 +353,21 @@ sub set_value {
 }
 
 #
+# This method is used to set the value of a particular node
+#
+#  $path	A reference to an array containing the path segments to the node
+#  $value	String of the value to set
+#
+sub set_disable {
+    my ( $self, $path ) = @_;
+
+    my $hash = $self->create_node($path);
+    if ( defined($hash) ) {
+        $hash->{'disable'} = 'true';
+    }
+}
+
+#
 # This method is used to generate the output of the node tree in the XORP config
 # file format.  The output is printed out to currently selected standard out.
 #
@@ -513,7 +532,11 @@ sub parse {
             next;
         }
 
-        if ( !$in_quote && $c eq '/' && $cNext eq '*' ) {
+	if ( !$in_quote && $c eq '!' && $cNext eq ' ') {
+	    $self->set_disable(\@path);
+	    $i += 2;
+	}
+        elsif ( !$in_quote && $c eq '/' && $cNext eq '*' ) {
             my $comment_text = '';
             my $comment_end = index( $contents, '*/', $i + 2 );
             if ( $comment_end == -1 ) {
@@ -564,5 +587,7 @@ sub parse {
             $i++;
         }
     }
+
+#    print Dumper($self);
 }
 
