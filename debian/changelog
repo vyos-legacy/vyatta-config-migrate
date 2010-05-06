@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.21) unstable; urgency=low
+
+  * broken parser fix.
+
+ -- Michael Larson <slioch@slioch.vyatta.com>  Thu, 06 May 2010 09:22:00 -0700
+
 vyatta-config-migrate (0.13.20) unstable; urgency=low
 
   * initial working version of xorp parser in support of
