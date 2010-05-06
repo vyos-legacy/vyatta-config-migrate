@@ -2,9 +2,7 @@
 
 use lib "/opt/vyatta/share/perl5/";
 
-#package XorpConfigParser;
-
-use Data::Dumper;
+package XorpConfigParser;
 
 use strict;
 
@@ -587,7 +585,6 @@ sub parse {
             $i++;
         }
     }
-
-#    print Dumper($self);
 }
 
+1;
