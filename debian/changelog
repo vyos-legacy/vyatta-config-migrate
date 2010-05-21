@@ -1,3 +1,13 @@
+vyatta-config-migrate (0.13.22) unstable; urgency=low
+
+  [ Stephen Hemminger ]
+  * Make sure XorpConfigParser.pm loads
+
+  [ Michael Larson ]
+  * modifications to fix bugs in parser in support of disable nodes.
+
+ -- Michael Larson <slioch@slioch.vyatta.com>  Fri, 21 May 2010 10:15:07 -0700
+
 vyatta-config-migrate (0.13.21) unstable; urgency=low
 
   * broken parser fix.
