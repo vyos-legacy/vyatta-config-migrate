@@ -1,4 +1,14 @@
 #! /bin/sh
 
+# Convert traffic-policy back to qos-policy
+sed -i -e 's/traffic-policy /qos-policy /' $1
+
+sed -i -e '/^[ 	  ]*qos-policy /,/^}/ {
+	s/rate-control /rate-limit /
+	s/shaper /traffic-shaper /
+	s/limiter /traffic-limiter /
+}' $1
+
+
 # Convert rate-control back to rate-limiter
 sed -i -e '/^[ 	  ]*qos-policy /,/}/s/rate-control/rate-limiter/' $1
