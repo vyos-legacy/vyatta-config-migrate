@@ -5,7 +5,6 @@ use lib "/opt/vyatta/share/perl5/";
 package XorpConfigParser;
 
 use strict;
-
 my %data;
 
 my %fields = ( _data => \%data );
@@ -358,7 +357,6 @@ sub set_value {
 #
 sub set_disable {
     my ( $self, $path ) = @_;
-
     my $hash = $self->create_node($path);
     if ( defined($hash) ) {
         $hash->{'disable'} = 'true';
@@ -462,6 +460,7 @@ sub parse {
     my $in_quote        = 0;
     my $name            = '';
     my $value           = undef;
+    my $disable         = undef;
     my @path;
     my %tree;
 
@@ -531,7 +530,7 @@ sub parse {
         }
 
 	if ( !$in_quote && $c eq '!' && $cNext eq ' ') {
-	    $self->set_disable(\@path);
+	    $disable = 'true';
 	    $i += 2;
 	}
         elsif ( !$in_quote && $c eq '/' && $cNext eq '*' ) {
@@ -554,8 +553,14 @@ sub parse {
             || $c eq "\n" )
         {
             $name =~ s/^\s+|\s$//g;
+
             if ( length($name) > 0 ) {
                 push( @path, $name );
+
+		if (defined $disable && $disable eq 'true') {
+                $self->set_disable(\@path);
+                $disable = undef;
+            }
 
                 #				print "Path is: \"@path\"    Name is: \"$name\"\n";
                 $self->set_value( \@path, $value );
@@ -568,11 +573,13 @@ sub parse {
                     $colon = 1;
                 }
             }
+
             $i++;
         }
         elsif ( !$in_quote && $c eq '}' ) {
             pop(@path);
             $name = '';
+            $disable = undef;
             $i++;
         }
         elsif ( !$in_quote && $c eq ';' ) {
