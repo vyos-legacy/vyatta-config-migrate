@@ -441,6 +441,8 @@ sub output {
 sub parse {
     my ( $self, $file ) = @_;
 
+    %data = {};
+
     open my $in, '<', $file
       or die "Error!  Unable to open file \"$file\".  $!";
 
