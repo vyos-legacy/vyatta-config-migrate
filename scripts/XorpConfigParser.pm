@@ -441,7 +441,7 @@ sub output {
 sub parse {
     my ( $self, $file ) = @_;
 
-    %data = {};
+    %data = ();
 
     open my $in, '<', $file
       or die "Error!  Unable to open file \"$file\".  $!";
@@ -485,7 +485,7 @@ sub parse {
                 $value .= '\\"';
                 $i++;
             }
-            else {
+            elsif ( defined($value) ) {
                 if ( ( length($value) > 0 ) || ( !( $c =~ /\s/ ) ) ) {
                     $value .= $c;
                 }
