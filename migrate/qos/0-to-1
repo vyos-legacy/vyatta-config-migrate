@@ -1,5 +1,7 @@
 #! /bin/sh
 
+sed -i -e '/^[ 	  ]*traffic-limiter /,/^}/{s/priority/precedence/}' $1
+
 # Convert policy names 
 sed -i -e '/^[ 	  ]*qos-policy /,/^}/ {
 	s/rate-limit /rate-control /
