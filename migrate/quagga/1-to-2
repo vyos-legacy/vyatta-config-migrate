@@ -1,0 +1,51 @@
+#!/usr/bin/perl
+
+#
+# replace:
+#       local-as {
+#            local-as u32
+# with:
+#       local-as u32 {
+sub migrate_local_as {
+    my $conf = shift;
+    my $re = qr/(\s+)local-as\s+{
+                \s+local-as\s+(\d+)\s+/x;
+    $conf =~ s/$re/$1local-as $2 {$1  /g;
+    return $conf;
+}
+
+#
+# replace:
+#       neighbor test {
+#
+# with:
+#       peer-group test {
+#
+sub migrate_peer_groups {
+    my $conf = shift;
+    $conf =~ s/(\s+)neighbor\s+([[:alnum:]]+)\s+{/$1peer-group $2 {/g;
+    return $conf;
+}
+
+my $config = shift;
+exit 1 if (!defined($config));
+my $tmpfile = "/tmp/vyatta_migrate_quagqa.$$";
+
+local($/, *FILE);  # slurp mode
+open FILE, "<", $config or die "Couldn't open $config\n";
+my $conf = <FILE>;
+close FILE;
+
+$conf = migrate_local_as($conf);
+$conf = migrate_peer_groups($conf);
+
+open(NEW, ">$tmpfile") or exit 1;
+print NEW $conf;
+close NEW;
+close CONF;
+
+my $ret = system("mv $tmpfile $config");
+exit 1 if ($ret >> 8);
+
+exit 0;
+
