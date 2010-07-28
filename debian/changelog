@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.27+larkspur2) unstable; urgency=low
+
+  * fix for bug 5930
+
+ -- Robert Bays <robert@vyatta.com>  Wed, 28 Jul 2010 11:39:12 -0700
+
 vyatta-config-migrate (0.13.27+larkspur1) unstable; urgency=low
 
   * UNRELEASED
