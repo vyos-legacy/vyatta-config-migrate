@@ -194,6 +194,7 @@ sub find_child {
     foreach my $child (@$children) {
         return $child if ( $name eq $child->{'name'} );
     }
+    return;
 }
 
 # $ref: reference to the node to be used as the starting point.
