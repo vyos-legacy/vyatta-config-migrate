@@ -1,0 +1,52 @@
+#! /usr/bin/perl
+
+# migrate "service ntp server" to "system ntp-server"
+
+use strict;
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $snode = $xcp->get_node(['service', 'ntp']);
+exit 0 unless $snode;
+
+my $dst = $xcp->create_node(['system']);
+die "Can't make system\n" unless $dst;
+
+my $children = $snode->{'children'};
+exit 0 unless $children;
+
+my @servers;
+foreach my $node (@$children) {
+    # Find ntp server entries
+    next unless ($node->{'name'} =~ /^server (.*)$/);
+    $node->{'name'} = "ntp-server $1";
+    # Drop options
+    $node->{'children'} = undef;
+    push @servers, $node;
+}
+exit 0 unless @servers;
+
+foreach my $match (@servers) {
+    $xcp->move_child($snode, $dst, $match->{'name'});
+}
+
+my $service = $xcp->get_node(['service']);
+$xcp->delete_child($service->{'children'}, 'ntp');
+
+my $tmpname = "/tmp/vyatta_migrate_system.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
