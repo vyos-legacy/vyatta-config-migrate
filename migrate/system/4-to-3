@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# migrate "service ntp server" to "system ntp-server"
+# migrate "system ntp server" to "system ntp-server"
 
 use strict;
 use XorpConfigParser;
@@ -12,7 +12,7 @@ exit 1 unless $orig_cfg;
 my $xcp = new XorpConfigParser();
 $xcp->parse($orig_cfg);
 
-my $snode = $xcp->get_node(['service', 'ntp']);
+my $snode = $xcp->get_node(['system', 'ntp']);
 exit 0 unless $snode;
 
 my $dst = $xcp->create_node(['system']);
@@ -36,8 +36,7 @@ foreach my $match (@servers) {
     $xcp->move_child($snode, $dst, $match->{'name'});
 }
 
-my $service = $xcp->get_node(['service']);
-$xcp->delete_child($service->{'children'}, 'ntp');
+$xcp->delete_child($dst->{'children'}, 'ntp');
 
 my $tmpname = "/tmp/vyatta_migrate_system.$$";
 open (my $tmp, '>', $tmpname)

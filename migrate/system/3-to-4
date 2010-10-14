@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# migrate "system ntp-server" to "service ntp server"
+# migrate "system ntp-server" to "system ntp server"
 
 use strict;
 use XorpConfigParser;
@@ -15,8 +15,8 @@ $xcp->parse($orig_cfg);
 my $snode = $xcp->get_node(['system']);
 exit 0 unless $snode;
 
-my $dst = $xcp->create_node(['service', 'ntp']);
-die "Can't make service ntp server\n" unless $dst;
+my $dst = $xcp->create_node(['system', 'ntp']);
+die "Can't make system ntp server\n" unless $dst;
 
 my $children = $snode->{'children'};
 exit 0 unless $children;
