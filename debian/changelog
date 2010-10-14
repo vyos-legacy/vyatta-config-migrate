@@ -1,3 +1,12 @@
+vyatta-config-migrate (0.13.33) unstable; urgency=low
+
+  * Fix ntp server migration and add console support migration
+  * Fix permission on upgrade scripts
+  * Add path to XorpConfigParser
+  * Change serial console syntax
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Thu, 14 Oct 2010 15:08:08 -0700
+
 vyatta-config-migrate (0.13.32) unstable; urgency=low
 
   * Change location of ntp server again
