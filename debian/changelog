@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.32) unstable; urgency=low
+
+  * Change location of ntp server again
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Wed, 13 Oct 2010 18:13:43 -0700
+
 vyatta-config-migrate (0.13.31) unstable; urgency=low
 
   * Fix find_child return
