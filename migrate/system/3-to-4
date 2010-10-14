@@ -6,6 +6,40 @@ use strict;
 use XorpConfigParser;
 use File::Copy;
 
+sub migrate_ntp {
+    my ($xcp, $snode) = @_;
+
+    my $dst = $xcp->create_node(['system', 'ntp']);
+    die "Can't make system ntp server\n" unless $dst;
+
+    my @servers;
+    my $children = $snode->{'children'};
+    foreach my $child (@$children) {
+	# Find ntp-server entries
+	next unless ($child->{'name'} =~ /^ntp-server /);
+	push @servers, $child;
+    }
+
+    foreach my $match (@servers) {
+	$xcp->move_child($snode, $dst, $match->{'name'});
+
+	# Rewrite name from ntp-server to server
+	$match->{'name'} =~ s/ntp-//;
+    }
+}
+
+# Add new default serial console node
+sub add_console {
+    my ($xcp) = @_;
+
+    $xcp->create_node(['system', 'console ttyS0']) 
+	or die "Can't make system console \n";
+
+    my $cons = $xcp->create_node(['system', 'console ttyS0', 'speed']);
+    $cons->{'value'} = '9600';
+}
+
+# main
 my $orig_cfg = shift;
 exit 1 unless $orig_cfg;
 
@@ -13,26 +47,11 @@ my $xcp = new XorpConfigParser();
 $xcp->parse($orig_cfg);
 
 my $snode = $xcp->get_node(['system']);
-exit 0 unless $snode;
+die "No system in configuration" unless $snode;
 
-my $dst = $xcp->create_node(['system', 'ntp']);
-die "Can't make system ntp server\n" unless $dst;
+migrate_ntp($xcp, $snode);
 
-my $children = $snode->{'children'};
-exit 0 unless $children;
-
-my @servers;
-foreach my $child (@$children) {
-    # Find ntp-server entries
-    next unless ($child->{'name'} =~ /^ntp-server (.*)$/);
-    $child->{'name'} = "server $1";
-    push @servers, $child;
-}
-exit 0 unless @servers;
-
-foreach my $match (@servers) {
-    $xcp->move_child($snode, $dst, $match->{'name'});
-}
+add_console($xcp);
 
 my $tmpname = "/tmp/vyatta_migrate_system.$$";
 open (my $tmp, '>', $tmpname)

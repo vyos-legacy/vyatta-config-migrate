@@ -6,37 +6,52 @@ use strict;
 use XorpConfigParser;
 use File::Copy;
 
+sub revert_ntp {
+    my $xcp = shift;
+    my $src = $xcp->get_node(['system', 'ntp']);
+    return unless $src;
+
+    my $dst = $xcp->get_node(['system']);
+    die "missing system node" unless $dst;
+
+    my @servers;
+    my $children = $src->{'children'};
+    foreach my $node (@$children) {
+	# Find ntp server entries
+	next unless ($node->{'name'} =~ /^server /);
+	push @servers, $node;
+    }
+
+    foreach my $match (@servers) {
+	$match->{'name'} =~ s/^/ntp-/;
+	$match->{'children'} = undef;
+
+	$xcp->move_child($src, $dst, $match->{'name'});
+    }
+    $xcp->delete_child($dst->{'children'}, 'ntp');
+}
+
+sub comment_console {
+    my $xcp = shift;
+    my $sys = $xcp->get_node(['system']);
+    die "missing system node" unless $sys;
+    
+    my $children = $sys->{'children'};
+    foreach my $child (@$children) {
+	my $name = $child->{'name'};
+	next unless (defined($name) && $name =~ /^console /);
+	$xcp->comment_out_node($child);
+    }
+}
+
 my $orig_cfg = shift;
 exit 1 unless $orig_cfg;
 
 my $xcp = new XorpConfigParser();
 $xcp->parse($orig_cfg);
 
-my $snode = $xcp->get_node(['system', 'ntp']);
-exit 0 unless $snode;
-
-my $dst = $xcp->create_node(['system']);
-die "Can't make system\n" unless $dst;
-
-my $children = $snode->{'children'};
-exit 0 unless $children;
-
-my @servers;
-foreach my $node (@$children) {
-    # Find ntp server entries
-    next unless ($node->{'name'} =~ /^server (.*)$/);
-    $node->{'name'} = "ntp-server $1";
-    # Drop options
-    $node->{'children'} = undef;
-    push @servers, $node;
-}
-exit 0 unless @servers;
-
-foreach my $match (@servers) {
-    $xcp->move_child($snode, $dst, $match->{'name'});
-}
-
-$xcp->delete_child($dst->{'children'}, 'ntp');
+comment_console($xcp);
+revert_ntp($xcp);
 
 my $tmpname = "/tmp/vyatta_migrate_system.$$";
 open (my $tmp, '>', $tmpname)
