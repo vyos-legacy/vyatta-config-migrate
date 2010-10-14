@@ -3,6 +3,7 @@
 # migrate "system ntp-server" to "system ntp server"
 
 use strict;
+use lib "/opt/vyatta/share/perl5/";
 use XorpConfigParser;
 use File::Copy;
 
