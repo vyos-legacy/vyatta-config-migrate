@@ -154,7 +154,7 @@ sub create_node {
 
         my %new_hash = ( 'name' => $segment );
         push @$children, \%new_hash;
-        return \%new_hash;
+        $hash = \%new_hash;
     }
     return $hash;
 }
