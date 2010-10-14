@@ -1,3 +1,10 @@
+vyatta-config-migrate (0.13.31) unstable; urgency=low
+
+  * Fix find_child return
+  * Add migration scripts for ntp-server config change.
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Wed, 13 Oct 2010 18:02:48 -0700
+
 vyatta-config-migrate (0.13.30) unstable; urgency=low
 
   * UNRELEASED
