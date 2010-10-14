@@ -33,10 +33,7 @@ sub migrate_ntp {
 sub add_console {
     my ($xcp) = @_;
 
-    $xcp->create_node(['system', 'console ttyS0']) 
-	or die "Can't make system console \n";
-
-    my $cons = $xcp->create_node(['system', 'console ttyS0', 'speed']);
+    my $cons = $xcp->create_node(['system', 'console', 'device ttyS0', 'speed']);
     $cons->{'value'} = '9600';
 }
 
