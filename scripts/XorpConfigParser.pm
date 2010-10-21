@@ -437,25 +437,28 @@ sub output {
 # This method is used to parse the XORP config file specified into the internal tree
 # structure that the methods above process and manipulate.
 #
-#  $file	String of the filename to parse
+#  $file	String of the filename to parse or a handle
 #
 sub parse {
     my ( $self, $file ) = @_;
+    my $in;
 
     %data = ();
 
-    open my $in, '<', $file
-      or die "Error!  Unable to open file \"$file\".  $!";
+    if (ref($file)) {
+	$in = $file;
+    } else {
+	open  $in, '<', $file
+	    or die "Error!  Unable to open file \"$file\".  $!";
+    }
 
     my $contents = "";
     while (<$in>) {
         $contents .= $_;
     }
-    close $in;
+    close $in if ($in != $file);
 
     my @array_contents = split( '', $contents );
-
-    #	print scalar(@array_contents) . "\n";
 
     my $length_contents = @array_contents;
     my $colon           = 0;
