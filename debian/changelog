@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.35) unstable; urgency=low
+
+  * Allow passing file handle to parser
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Thu, 21 Oct 2010 16:58:53 -0700
+
 vyatta-config-migrate (0.13.34) unstable; urgency=low
 
   * Fix console port creation
