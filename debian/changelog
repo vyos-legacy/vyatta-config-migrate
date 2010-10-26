@@ -1,3 +1,10 @@
+vyatta-config-migrate (0.13.37) unstable; urgency=low
+
+  * migration scripts for IPS CLI to 'upgrade to'/'downgrade from'
+    Mendocino
+
+ -- Mohit Mehta <mohit@vyatta.com>  Tue, 26 Oct 2010 16:42:47 -0700
+
 vyatta-config-migrate (0.13.36) unstable; urgency=low
 
   * Revert "Allow passing file handle to parser"
