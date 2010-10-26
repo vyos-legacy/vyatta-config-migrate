@@ -1,0 +1,45 @@
+#! /usr/bin/perl
+
+# if global inspection is enabled in Mendocino; convert that to pre-mendocino 
+# format i.e. remove 'inspect-all enable' from it. we DO NOT undo inspection 
+# enabled on interfaces/zones since the concept of direction was non-existent 
+# in pre-mendocino releases and such config files run on pre-mendocino images 
+# will fail.
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $ci = $xcp->get_node(['content-inspection']);
+exit 0 unless $ci; # content-inspection not configured
+
+# comment out 'inspect-all enable' under content-inspection
+my $children = $ci->{'children'};
+foreach my $child (@$children) {
+  my $name = $child->{'name'};
+  next unless (defined($name) && $name =~ /inspect-all/);
+  $xcp->comment_out_node($child);
+}
+
+my $tmpname = "/tmp/vyatta_migrate_content_inspection.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+
+exit 0;

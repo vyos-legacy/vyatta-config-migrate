@@ -12,6 +12,7 @@
 /debian/files
 /debian/vyatta-config-migrate
 /debian/vyatta-config-migrate.debhelper.log
+/debian/vyatta-config-migrate.substvars
 /INSTALL
 /Makefile.in
 /Makefile
