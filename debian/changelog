@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.36) unstable; urgency=low
+
+  * Revert "Allow passing file handle to parser"
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Mon, 25 Oct 2010 17:09:52 -0700
+
 vyatta-config-migrate (0.13.35) unstable; urgency=low
 
   * Allow passing file handle to parser
