@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.40) unstable; urgency=low
+
+  * Add config migration for initial commit-revisions.
+
+ -- Stig Thormodsrud <stig@vyatta.com>  Fri, 03 Dec 2010 17:51:08 -0800
+
 vyatta-config-migrate (0.13.39) unstable; urgency=low
 
   * Add migration scripts for 'content-inspection ips output local'.
