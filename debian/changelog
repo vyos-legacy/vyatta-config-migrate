@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.39) unstable; urgency=low
+
+  * Add migration scripts for 'content-inspection ips output local'.
+
+ -- Stig Thormodsrud <stig@vyatta.com>  Fri, 03 Dec 2010 16:24:22 -0800
+
 vyatta-config-migrate (0.13.38) unstable; urgency=low
 
   * remove deprecated linda override
