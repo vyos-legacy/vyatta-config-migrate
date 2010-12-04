@@ -1,0 +1,32 @@
+#! /usr/bin/perl
+
+# Add default 'system config-management commit-revisions 20'
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+$xcp->set_value(['system', 'config-management', 'commit-revisions'], '20');
+
+my $tmpname = "/tmp/vyatta_migrate_content_inspection.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+
+exit 0;
