@@ -22,7 +22,7 @@ exit 0 unless $ci; # content-inspection not configured
 my $children = $ci->{'children'};
 foreach my $child (@$children) {
   my $name = $child->{'name'};
-  next unless (defined($name) && $name =~ /output/);
+  next unless (defined($name) && $name =~ /log/);
   $xcp->comment_out_node($child);
 }
 
