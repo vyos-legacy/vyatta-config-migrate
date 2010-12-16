@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.41) unstable; urgency=low
+
+  * Change ips 'output' to 'log'
+
+ -- Stig Thormodsrud <stig@vyatta.com>  Wed, 15 Dec 2010 17:43:47 -0800
+
 vyatta-config-migrate (0.13.40) unstable; urgency=low
 
   * Add config migration for initial commit-revisions.
