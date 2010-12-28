@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.42) unstable; urgency=low
+
+  * new branch
+
+ -- An-Cheng Huang <ancheng@vyatta.com>  Tue, 28 Dec 2010 13:48:36 -0800
+
 vyatta-config-migrate (0.13.41) unstable; urgency=low
 
   * Change ips 'output' to 'log'
