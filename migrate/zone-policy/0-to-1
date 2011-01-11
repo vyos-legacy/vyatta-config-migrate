@@ -24,7 +24,7 @@ my $zone_policy = $xcp->get_node( ['zone-policy'] );
 exit 0 unless $zone_policy;    # zone-policy not configured
 
 # Enable/disable debug output.
-my $DEBUG = 'true';
+my $DEBUG = undef;
 
 sub dprintf {
   my ($args) = @_;

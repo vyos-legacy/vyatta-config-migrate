@@ -20,7 +20,7 @@ my $fw = $xcp->get_node( ['firewall'] );
 exit 0 unless $fw;    # firewall not configured
 
 # Enable/disable debug output.
-my $DEBUG = 'true';
+my $DEBUG = undef;
 
 sub dprintf {
   my ($args) = @_;
