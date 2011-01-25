@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.41+mendocino3) unstable; urgency=low
+
+  * Handle config migration comment at top level when inserting node
+
+ -- Stephen Hemminger <stephen.hemminger@vyatta.com>  Mon, 24 Jan 2011 20:27:47 -0800
+
 vyatta-config-migrate (0.13.41+mendocino2) unstable; urgency=low
 
   * Fix Bug 6292 iptables chain-name must be reduced to 28 characters
