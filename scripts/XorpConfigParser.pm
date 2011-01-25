@@ -147,13 +147,31 @@ sub create_node {
             next unless $name;
 
             if ( $name eq $segment ) {
-                $hash = $child;
+                $hash = $child;		# record insertion point
                 next SEGMENT;
             }
         }
 
         my %new_hash = ( 'name' => $segment );
-        push @$children, \%new_hash;
+
+	if ($hash != \%data) {
+	    # insertion in subtree
+	    push @$children, \%new_hash;
+	} else {
+	    # special case for insertion at top put new before version comment
+	    my @comments;
+	    while (my $child = pop @$children) {
+		if ($child->{'comment'}) {
+		    unshift @comments, $child;
+		} else {
+		    push @$children, $child;
+		    last;
+		}
+	    }
+
+	    push @$children, \%new_hash;
+	    push @$children, @comments;
+	}
         $hash = \%new_hash;
     }
     return $hash;
