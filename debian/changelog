@@ -1,3 +1,13 @@
+vyatta-config-migrate (0.13.44) unstable; urgency=low
+
+  [ Stephen Hemminger ]
+  * Handle config migration comment at top level when inserting node
+
+  [ John Southworth ]
+  * Migrate script for new ipsec local and remote configuration
+
+ -- John Southworth <john.southworth@vyatta.com>  Fri, 04 Feb 2011 19:17:18 -0600
+
 vyatta-config-migrate (0.13.43) unstable; urgency=low
 
   * Fix Bug 6292 iptables chain-name must be reduced to 28 characters
