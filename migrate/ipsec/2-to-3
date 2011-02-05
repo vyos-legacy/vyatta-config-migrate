@@ -1,0 +1,50 @@
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use Data::Dumper;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $hash_vpn_ipsec_sitetosite = $xcp->get_node(['vpn', 'ipsec', 'site-to-site']);
+if (defined($hash_vpn_ipsec_sitetosite)) {
+  my $hash_peers = $hash_vpn_ipsec_sitetosite->{'children'};
+  if (defined($hash_peers)){
+    foreach my $peer (@{$hash_peers}){
+      my $peer_children = $peer->{'children'};
+      if (defined($peer_children)){
+        foreach my $child (@{$peer_children}){
+          if ($child->{'name'} =~ /^tunnel.*/){
+            my $hash_tunnels = $child->{'children'};
+            if (defined $hash_tunnels){
+              foreach my $tunneldat (@{$hash_tunnels}){
+                if ($tunneldat->{'name'} =~ /^local-subnet\s+(.*)/){
+                  my $lsnet = $1;
+                  my @set = ['vpn', 'ipsec', 'site-to-site', $peer->{'name'}, $child->{'name'}, 'local', "subnet $lsnet"];
+                  $xcp->comment_out_node($tunneldat);
+                  $xcp->set_value(@set);
+                }
+                if ($tunneldat->{'name'} =~ /^remote-subnet\s+(.*)/){
+                  my $rsnet = $1;
+                  my @set = ['vpn', 'ipsec', 'site-to-site', $peer->{'name'}, $child->{'name'}, 'remote', "subnet $rsnet"];
+                  $xcp->comment_out_node($tunneldat);
+                  $xcp->set_value(@set);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+my $tmpfile = "vyatta_migrate_ipsec.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
