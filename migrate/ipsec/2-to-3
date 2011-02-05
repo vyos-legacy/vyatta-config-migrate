@@ -9,6 +9,7 @@ exit 1 if (!defined($orig_cfg));
 my $xcp = new XorpConfigParser();
 $xcp->parse($orig_cfg);
 
+
 my $hash_vpn_ipsec_sitetosite = $xcp->get_node(['vpn', 'ipsec', 'site-to-site']);
 if (defined($hash_vpn_ipsec_sitetosite)) {
   my $hash_peers = $hash_vpn_ipsec_sitetosite->{'children'};
