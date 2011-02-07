@@ -1,3 +1,10 @@
+vyatta-config-migrate (0.13.47) unstable; urgency=low
+
+  * Fix migrate scripts for IPSEC to copy the temporary config to the
+    actual config
+
+ -- John Southworth <john.southworth@vyatta.com>  Mon, 07 Feb 2011 17:15:55 -0600
+
 vyatta-config-migrate (0.13.46) unstable; urgency=low
 
   * Added the interpreter for the ipsec scripts
