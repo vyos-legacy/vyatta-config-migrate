@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.48) unstable; urgency=low
+
+  * Add interpreter to 3-to-2 script
+
+ -- John Southworth <john.southworth@vyatta.com>  Mon, 07 Feb 2011 17:18:32 -0600
+
 vyatta-config-migrate (0.13.47) unstable; urgency=low
 
   * Fix migrate scripts for IPSEC to copy the temporary config to the
