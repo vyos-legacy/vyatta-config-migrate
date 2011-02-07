@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.46) unstable; urgency=low
+
+  * Added the interpreter for the ipsec scripts
+
+ -- John Southworth <john.southworth@vyatta.com>  Mon, 07 Feb 2011 13:59:50 -0600
+
 vyatta-config-migrate (0.13.45) unstable; urgency=low
 
   * migrate scripts for ipsec
