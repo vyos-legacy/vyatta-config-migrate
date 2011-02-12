@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $target_value;
+
+my $lb_node = $xcp->get_node(['load-balancing', 'wan']);
+if (defined($lb_node)) {
+    my $lb_ih = $lb_node->{'children'};
+    if (defined($lb_ih)) {
+        # Iterate through the interfaces
+	foreach my $rule (@$lb_ih) {
+	    if ($rule->{'name'} =~ /^rule.*/) {
+		my $lb_rule_no = $rule->{'children'};
+		if (defined($lb_rule_no)) {
+		    foreach my $number (@$lb_rule_no) {
+			if ($number->{'name'} =~ /^enable-source-based-routing$/) {
+			    $xcp->comment_out_node($number);
+			    my @load_balancing_wan_rule = ('load-balancing', 'wan', $rule->{'name'}, 'per-packet-balancing');
+			    $xcp->set_value(\@load_balancing_wan_rule, "{\n\t}");
+
+			}
+		    }
+
+		}
+	    }
+	}
+    }
+}
+
+
+#look for target and build new section
+
+
+
+###new configuration
+# wan {
+#     interface-health eth0 {
+#         nexthop 12.12.12.12
+
+#         test 1 {
+#	    target 9.9.9.9
+#            type ping
+#         }
+
+#     }
+# }
+
+
+
+
+###old configuration
+
+# wan {
+#    interface-health eth0 {
+#	nexthop 12.12.12.12
+
+#	target 9.9.9.9
+
+#	}
+#}
+
+
+my $tmpfile = "/tmp/vyatta_migrate_wanloadbalance.$$";
+open(TMPFILE, ">$tmpfile") or exit 1;
+select TMPFILE;
+
+$xcp->output(0);
+
+close TMPFILE;
+my $ret = system("mv $tmpfile $orig_cfg");
+exit 1 if ($ret >> 8);
+
+exit 0;
