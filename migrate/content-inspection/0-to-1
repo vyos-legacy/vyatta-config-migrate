@@ -22,7 +22,8 @@ my $ci = $xcp->get_node(['content-inspection']);
 exit 0 unless $ci; # content-inspection not configured
 
 # add 'inspect-all enable' under content-inspection
-$xcp->set_value(['content-inspection', 'inspect-all'], 'enable');
+my $loc = $xcp->create_node(['content-inspection', 'inspect-all', 'enable']);
+die "Unable to add 'inspect-all enable' under content-inspection\n" unless $loc;
 
 my $tmpname = "/tmp/vyatta_migrate_content_inspection.$$";
 open (my $tmp, '>', $tmpname)
