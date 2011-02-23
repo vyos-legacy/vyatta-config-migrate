@@ -1,3 +1,10 @@
+vyatta-config-migrate (0.13.41+mendocino4) unstable; urgency=low
+
+  * Fix Bug 6827 config migration for content-inspection from 6.1 to 6.2
+    failed
+
+ -- Mohit Mehta <mohit@vyatta.com>  Wed, 23 Feb 2011 12:35:17 -0800
+
 vyatta-config-migrate (0.13.41+mendocino3) unstable; urgency=low
 
   * Handle config migration comment at top level when inserting node
