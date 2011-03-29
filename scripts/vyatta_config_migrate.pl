@@ -161,6 +161,17 @@ if (!$backup) {
   my $cmd = "sed -i 's/\\(=== vyatta-config-version: \"\\).*\\(\" ===\\)/"
             . "\\1$version_str\\2/' $config_file";
   my $ret = system($cmd);
+  if ($ret >> 8 == 0) {
+    $cmd = '/opt/vyatta/sbin/vyatta_current_conf_ver.pl';
+    my @lines = `$cmd | grep '^/\\* Release version:.*\\*/\$'`;
+    if ($lines[0]) {
+      $cmd = "sed -i '/^\\\/\\* Release version:.*\\*\\\/\$/d' $config_file";
+      $ret = system($cmd);
+      if ($ret >> 8 == 0) {
+        $ret = system("echo '$lines[0]' >>$config_file");
+      }
+    }
+  }
   if ($ret >> 8) {
     syslog("warning", "Cannot modify config file %s. Migration aborted.",
            $config_file);
