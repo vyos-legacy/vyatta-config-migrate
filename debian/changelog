@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.41+mendocino5) unstable; urgency=low
+
+  * fix for bug 6852
+
+ -- An-Cheng Huang <ancheng@vyatta.com>  Mon, 28 Mar 2011 17:40:07 -0700
+
 vyatta-config-migrate (0.13.41+mendocino4) unstable; urgency=low
 
   * Fix Bug 6827 config migration for content-inspection from 6.1 to 6.2
