@@ -28,7 +28,7 @@ print "/* === vyatta-config-version: \"$version_str\" === */\n";
 # upgrades or downgrades.
 if (open(VER, "</opt/vyatta/etc/version")) {
   my $line = <VER>;
-  if ($line =~ /^Version\s+:\s+(\S.*)$/) {
+  if ($line =~ /^Version\s*:\s*(\S.*)$/) {
     my $ver = $1;
     print "/* Release version: $ver */\n";
   }
