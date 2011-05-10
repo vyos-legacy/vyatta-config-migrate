@@ -1,0 +1,42 @@
+#! /usr/bin/perl
+
+# In Napa we changed snorts rule processing code.
+# The new convention for categories does not have '.rules' as part of the name 
+# So change the entries.
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $ci = $xcp->get_node(['content-inspection', 'ips', 'modify-rules']);
+exit 0 unless $ci; # content-inspection not configured
+
+my $children = $ci->{'children'};
+if (defined $children){
+  $_->{'name'} =~ s/(.*)\.rules/$1/ for @{$children};
+  $xcp->set_value(['content-inspection', 'ips', 'modify-rules', $_->{'name'}]) 
+    for (@{$children});
+
+  my $tmpname = "/tmp/vyatta_migrate_content_inspection.$$";
+  open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+  select $tmp;
+  $xcp->output(0);
+  select STDOUT;
+  close $tmp;
+
+  move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+}
+
+exit 0;
