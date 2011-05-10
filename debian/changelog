@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.52) unstable; urgency=low
+
+  * Migrate script to change include-category for content-inspection
+
+ -- John Southworth <john.southworth@vyatta.com>  Tue, 10 May 2011 17:38:28 -0500
+
 vyatta-config-migrate (0.13.51) unstable; urgency=low
 
   * fix for bug 6852
