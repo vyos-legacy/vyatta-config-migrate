@@ -9,8 +9,8 @@ my $VYATTA_CONFIG_DIR = "/opt/vyatta/etc/config-migrate";
 my $CURRENT_VERSION_DIR = "$VYATTA_CONFIG_DIR/current";
 my $MIGRATE_DIR = "$VYATTA_CONFIG_DIR/migrate";
 
-my $DEBUG_LOG = "/tmp/migrate.log";
-my $dbg = 1;
+my $DEBUG_LOG = "/var/log/vyatta/migrate.log";
+my $dbg = 0;
 if ($dbg) {
   open(DBG, ">>$DEBUG_LOG") or $dbg = 0;
 }
