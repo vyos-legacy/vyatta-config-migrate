@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.53) unstable; urgency=low
+
+  * Bugfix 6767: Disable debug logging by default.
+
+ -- Bob Gilligan <gilligan@vyatta.com>  Thu, 16 Jun 2011 10:58:26 -0700
+
 vyatta-config-migrate (0.13.52) unstable; urgency=low
 
   * Migrate script to change include-category for content-inspection
