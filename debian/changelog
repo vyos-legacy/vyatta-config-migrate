@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.55) unstable; urgency=low
+
+  * Migration for bug 6900
+
+ -- John Southworth <john.southworth@vyatta.com>  Mon, 15 Aug 2011 13:30:43 -0500
+
 vyatta-config-migrate (0.13.54) unstable; urgency=low
 
   * new branch
