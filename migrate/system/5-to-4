@@ -6,7 +6,6 @@ use warnings;
 use lib "/opt/vyatta/share/perl5/";
 use XorpConfigParser;
 use File::Copy;
-use Data::Dumper;
 
 my $orig_cfg = shift;
 exit 1 unless $orig_cfg;
@@ -22,19 +21,16 @@ if (defined $intf_children){
   foreach my $intf (@{$intf_children}){
      if ( $intf->{'name'} =~ /tunnel tun[0-9]*/ ){
        my $intf_params = $xcp->get_node(['interfaces', $intf->{'name'}, 'parameters', 'ip']);
-       print Dumper $intf_params;
        if (defined $intf_params){
          foreach my $intf_param (@{$intf_params->{'children'}}){
            if ( ($intf_param->{'name'} =~ /tos/) or
                 ($intf_param->{'name'} =~ /ttl/) or
                 ($intf_param->{'name'} =~ /key/) ) {
               $xcp->create_node(['interfaces', $intf->{'name'}, $intf_param->{'name'}]);
-              print Dumper $intf_param;
            } elsif ($intf_param->{'name'} =~ /bridge-group/) {
               foreach my $bridge_option (@{$intf_param->{'children'}}){
                 $xcp->create_node(['interfaces', $intf->{'name'}, $intf_param->{'name'}, $bridge_option->{'name'}]);
               }
-              print Dumper $intf_param;
            }
          }
          $xcp->comment_out_node($xcp->get_node(['interfaces', $intf->{'name'}, 'parameters']));
