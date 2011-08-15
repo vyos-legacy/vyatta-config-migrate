@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.57) unstable; urgency=low
+
+  * Remove debugging from 5-to-4 script
+
+ -- John Southworth <john.southworth@vyatta.com>  Mon, 15 Aug 2011 13:38:33 -0500
+
 vyatta-config-migrate (0.13.56) unstable; urgency=low
 
   * re-release
