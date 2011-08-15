@@ -1,0 +1,52 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $interfaces = $xcp->get_node(['interfaces']);
+exit 0 unless $interfaces; # tunnel interfaces not configured
+
+my $intf_children = $interfaces->{'children'};
+if (defined $intf_children){
+  foreach my $intf (@{$intf_children}){
+     if ( $intf->{'name'} =~ /tunnel tun[0-9]*/ ){
+       for my $intf_child (@{$intf->{'children'}}){
+         if ( ($intf_child->{'name'} =~ /tos/) or
+              ($intf_child->{'name'} =~ /ttl/) or
+              ($intf_child->{'name'} =~ /key/) ) {
+            $xcp->create_node(['interfaces', $intf->{'name'}, 'parameters', 'ip', $intf_child->{'name'}]);
+            $xcp->comment_out_node($intf_child);
+         } elsif ($intf_child->{'name'} =~ /bridge-group/) {
+            foreach my $bridge_option (@{$intf_child->{'children'}}){
+              $xcp->create_node(['interfaces', $intf->{'name'}, 'parameters', 'ip', $intf_child->{'name'}, $bridge_option->{'name'}]);
+            }
+            $xcp->comment_out_node($intf_child);
+         }
+       }
+     }
+  }
+
+  my $tmpname = "/tmp/vyatta_migrate_tunnel_options.$$";
+  open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+  select $tmp;
+  $xcp->output(0);
+  select STDOUT;
+  close $tmp;
+
+  move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+}
+
+exit 0;
