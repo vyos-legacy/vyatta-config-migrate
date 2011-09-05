@@ -70,7 +70,7 @@ my $fw_children = $fw->{'children'};
     }
   }
 
-  my $tmpname = "/tmp/vyatta_migrate_tunnel_options.$$";
+  my $tmpname = "/tmp/vyatta_migrate_4_to_5.$$";
   open (my $tmp, '>', $tmpname)
     or die "Can't open: $tmpname: $!";
 
