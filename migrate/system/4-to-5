@@ -60,7 +60,7 @@ my $fw_children = $fw->{'children'};
       $xcp->comment_out_node($child);
     }
     elsif( $name =~ /conntrack-tcp-loose/ ) {
-      $xcp->set_value(['system', 'conntrack', 'tcp-loose'], $value);
+      $xcp->set_value(['system', 'conntrack', 'tcp', 'loose'], $value);
       $xcp->comment_out_node($child);
     }
     elsif( $name =~ /conntrack-options/ ) {
