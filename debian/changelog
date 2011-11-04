@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.58) unstable; urgency=low
+
+  * Add migration for firewall version 5.
+
+ -- Daniil Baturin <daniil.baturin@vyatta.com>  Sat, 05 Nov 2011 06:12:06 +0700
+
 vyatta-config-migrate (0.13.57) unstable; urgency=low
 
   * Remove debugging from 5-to-4 script
