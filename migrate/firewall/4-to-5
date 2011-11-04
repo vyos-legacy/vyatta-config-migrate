@@ -1,0 +1,62 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+## Move conntrack settings from "firewall" to "system conntrack"
+
+my $fw = $xcp->get_node(['firewall']);
+exit 0 unless $fw; # firewall is not configured
+
+# Create "system conntrack" branch
+$xcp->create_node(['system', 'conntrack']);
+
+my $fw_children = $fw->{'children'};
+  foreach my $child (@{$fw_children}) {
+    my ($name, $value) = split(/ /, $child->{'name'});
+    if ( $name =~ /conntrack-expect-table-size/ ) {
+      $xcp->set_value(['system', 'conntrack', 'expect-table-size'], $value);
+      $xcp->comment_out_node($child);
+    }
+    elsif( $name =~ /conntrack-hash-size/ ) {
+      $xcp->set_value(['system', 'conntrack', 'hash-size'], $value);
+      $xcp->comment_out_node($child);
+    }
+    elsif( $name =~ /conntrack-table-size/ ) {
+      $xcp->set_value(['system', 'conntrack', 'table-size'], $value);
+      $xcp->comment_out_node($child);
+    }
+    elsif( $name =~ /conntrack-tcp-loose/ ) {
+      $xcp->set_value(['system', 'conntrack', 'tcp', 'loose'], $value);
+      $xcp->comment_out_node($child);
+    }
+    elsif( $name =~ /conntrack-options/ ) {
+      $xcp->create_node(['system', 'conntrack', 'modules']);
+      $xcp->move_child($xcp->get_node(['firewall', 'conntrack-options']), $xcp->get_node(['system', 'conntrack', 'modules']), 'sip');
+      $xcp->comment_out_node($child);
+    }
+  }
+
+  my $tmpname = "/tmp/vyatta_fw_migrate_4_to_5.$$";
+  open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+  select $tmp;
+  $xcp->output(0);
+  select STDOUT;
+  close $tmp;
+
+  move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+
+exit 0;
