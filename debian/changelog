@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.59) unstable; urgency=low
+
+  * Force release
+
+ -- Daniil Baturin <daniil.baturin@vyatta.com>  Sat, 05 Nov 2011 06:14:05 +0700
+
 vyatta-config-migrate (0.13.58) unstable; urgency=low
 
   * Add migration for firewall version 5.
