@@ -1,3 +1,15 @@
+vyatta-config-migrate (0.13.58) unstable; urgency=low
+
+  * Add migration for conntrack settings.
+  * Change temporary file name of 4-to-5 migration, tunnel options is
+    not the only
+  * Add backwards 5 to 4 migration for conntrack options
+  * Update 4-to-5 system migration script to match new name "tcp loose"
+    instead of "tcp-loose".
+  * Add NAT 3 to 4 migration script.
+
+ -- Daniil Baturin <daniil.baturin@vyatta.com>  Thu, 24 Nov 2011 06:43:57 +0700
+
 vyatta-config-migrate (0.13.57) unstable; urgency=low
 
   * Remove debugging from 5-to-4 script
