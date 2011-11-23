@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+use Data::Dumper;
+
+my $orig_cfg = shift;
+exit 1 if (!defined($orig_cfg));
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $old_nat = $xcp->get_node(['service', 'nat']);
+exit 0 unless $old_nat; # NAT is not configured
+
+## Now walk through the rules and put them into
+## corresponding branches
+
+my $rules = $old_nat->{'children'};
+
+my @src_rules = ();
+my @dst_rules = ();
+
+## Build lists of destination and source rule numbers
+foreach my $rule (@{$rules}) {
+    foreach my $option (@{$rule->{'children'}}) {
+        if ($option->{'name'} =~ /type destination/) {
+            push(@dst_rules, $rule->{'name'});
+        }
+        elsif ( ($option->{'name'} =~ /type source/) || ($option->{'name'} =~ /type masquerade/) ) {
+            push(@src_rules, $rule->{'name'});
+        }
+    }
+}
+
+## Migrate destination rules
+
+if (@dst_rules) {
+    $xcp->create_node(['nat', 'destination']);
+
+    foreach my $rule_name (@dst_rules) {
+        $xcp->move_child($xcp->get_node(['service', 'nat']), $xcp->get_node(['nat', 'destination']), $rule_name );
+
+        my $new_rule = $xcp->get_node(['nat', 'destination', $rule_name]);
+
+        # "inside-address" -> "translation"
+        $xcp->create_node(['nat', 'destination', $rule_name, 'translation']);
+        my $inside_address = $xcp->get_node(['nat', 'destination', $rule_name, 'inside-address']);
+        foreach my $child (@{$inside_address->{'children'}}) {
+            my ($name, $value) = split(/ /, $child->{'name'});
+            if ($name =~ /address/) {
+                $xcp->set_value(['nat', 'destination', $rule_name, 'translation', 'address'], $value);
+            }
+            elsif ($name =~ /port/) {
+                $xcp->set_value(['nat', 'destination', $rule_name, 'translation', 'port'], $value);
+            }
+        }
+        $xcp->comment_out_node($xcp->get_node(['nat', 'destination', $rule_name, 'inside-address']));
+
+        # Rule options changes
+        foreach my $child (@{$new_rule->{'children'}}) {
+            if ($child->{'name'} =~ /type/) {
+                # Type is not needed anymore
+                $xcp->comment_out_node($child);
+            }
+        }
+    }
+}
+
+## Migrate source rules
+if (@src_rules) {
+    $xcp->create_node(['nat', 'source']);
+
+    foreach my $rule_name (@src_rules) {
+        $xcp->move_child($xcp->get_node(['service', 'nat']), $xcp->get_node(['nat', 'source']), $rule_name);
+
+        my $new_rule = $xcp->get_node(['nat', 'source', $rule_name]);
+
+        # "inside-address" -> "translation"
+        $xcp->create_node(['nat', 'source', $rule_name, 'translation']);
+        my $outside_address = $xcp->get_node(['nat', 'source', $rule_name, 'outside-address']);
+        foreach my $child (@{$outside_address->{'children'}}) {
+            my ($name, $value) = split(/ /, $child->{'name'});
+            if ($name =~ /address/) {
+                $xcp->set_value(['nat', 'source', $rule_name, 'translation', 'address'], $value);
+            }
+            elsif ($name =~ /port/) {
+                $xcp->set_value(['nat', 'source', $rule_name, 'translation', 'port'], $value);
+            }
+        }
+        $xcp->comment_out_node($xcp->get_node(['nat', 'source', $rule_name, 'outside-address']));
+
+        # Rule options changes
+        foreach my $child (@{$new_rule->{'children'}}) {
+            my ($name, $value) = split(/ /, $child->{'name'});
+            if ($name =~ /type/) {
+                if ($value =~ /masquerade/) {
+                     # Migrate masquerade rule
+                     $xcp->set_value(['nat', 'source', $rule_name, 'translation', 'address'], 'masquerade');
+                }
+                # Type is not needed anymore
+                $xcp->comment_out_node($child);
+            }
+        }
+    }
+}
+
+## Farewell to "service nat"
+$xcp->comment_out_node($xcp->get_node(['service', 'nat']));
+
+my $tmpname = "/tmp/vyatta_migrate_3_to_4.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+# Dirty hack to replace "*" with "any"
+open ($tmp, '<', $tmpname)
+    or die("Can not open file");
+my $contents = "";
+while (<$tmp>) {
+     $contents .= $_;
+}
+close($tmp);
+
+# Not sure if we may have "*" elsewhere, but let the regexps
+# be more specific
+$contents =~ s/(inbound-interface \"\*\")/inbound-interface any/g;
+$contents =~ s/(outbound-interface \"\*\")/outbound-interface any/g;
+
+open ($tmp, '>', $tmpname);
+select $tmp;
+print $contents;
+select STDOUT;
+close($tmp);
+
+move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+
+exit(0);
+
