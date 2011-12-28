@@ -1,0 +1,133 @@
+#!/usr/bin/perl
+
+use strict;
+use File::Copy;
+use lib "/opt/vyatta/share/perl5";
+use XorpConfigParser;
+
+my $orig_cfg = shift;
+exit 1 if !defined($orig_cfg);
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $src_nat = $xcp->get_node(['nat', 'source']);
+my $dst_nat = $xcp->get_node(['nat', 'destination']);
+
+# Exit if NAT is not configured
+exit 0 if (!defined($src_nat) && !defined($dst_nat));
+
+my $src_rules = $src_nat ? $src_nat->{'children'} : [];
+my $dst_rules = $dst_nat ? $dst_nat->{'children'} : [];
+
+my @rules = (@{$src_rules}, @{$dst_rules});
+
+my $rule_num = 1;
+my $rule_type = undef;
+
+$xcp->create_node(['service', 'nat']);
+
+foreach my $rule (@rules) {
+    # I wonder if this condition will ever be true
+    die("NAT rule number exceeded maximum allowed value!")
+        if $rule_num > 9999;
+ 
+    $xcp->create_node(['service', 'nat', "rule $rule_num"]);
+
+    foreach my $rule_child (@{$rule->{'children'}}) {
+        my ($name, $value) = split(/ /, $rule_child->{'name'}, 2);
+
+        # description
+        if ($name eq 'description') {
+            $xcp->set_value(['service', 'nat', "rule $rule_num", 'description'], $value);
+        } elsif ($name eq 'destination') {
+        # destination address/port
+            my $dchildren = $rule_child->{'children'};
+            foreach my $dchild (@{$dchildren}) {
+                my ($dname, $dvalue) = split(/ /, $dchild->{'name'});
+                if ($dname eq 'address') {
+                    $xcp->set_value(['service', 'nat', "rule $rule_num", 'destination', 'address'],
+                                    $dvalue);
+                } elsif ($dname eq 'port') {
+                    $xcp->set_value(['service', 'nat', "rule $rule_num", 'destination', 'port'],
+                                    $dvalue);
+                }
+            }
+        } elsif ($name eq 'disable') {
+        # disable
+            $xcp->set_value(['service', 'nat', "rule $rule_num", 'disable'], '');
+        } elsif ($name eq 'exclude') {
+        # exclude
+            $xcp->set_value(['service', 'nat', "rule $rule_num", 'exclude'], '');
+        } elsif ($name eq 'inbound-interface') {
+        # inbound-interface
+            $xcp->set_value(['service', 'nat', "rule $rule_num", 'inbound-interface'], $value);
+            $rule_type = 'destination';
+        } elsif ($name eq 'log') {
+        # log
+            $xcp->set_value(['service', 'nat', "rule $rule_num", 'log'], $value);
+        } elsif ($name eq 'outbound-interface') {
+        # outbound-interface
+            $xcp->set_value(['service', 'nat', "rule $rule_num", 'outbound-interface'], $value);
+            $rule_type = 'source';
+        } elsif ($name eq 'protocol') {
+        # protocol
+            $xcp->set_value(['service', 'nat', "rule $rule_num", 'protocol'], $value);
+        } elsif ($name eq 'source') {
+        # source
+            my $schildren = $rule_child->{'children'};
+            foreach my $schild (@{$schildren}) {
+                my ($sname, $svalue) = split(/ /, $schild->{'name'});
+                if ($sname eq 'address') {
+                    $xcp->set_value(['service', 'nat', "rule $rule_num", 'source', 'address'],
+                                    $svalue);
+                } elsif ($sname eq 'port') {
+                    $xcp->set_value(['service', 'nat', "rule $rule_num", 'source', 'port'],
+                                    $svalue);
+                }
+            }
+        } elsif ($name eq 'translation') {
+        # translation
+            my $tchildren = $rule_child->{'children'};
+            my $old_trans = undef;
+            foreach my $tchild (@{$tchildren}) {
+                my ($tname, $tvalue) = split(/ /, $tchild->{'name'});
+                if ($tname eq 'address') {
+                    $rule_type = 'masquerade' if $tvalue eq 'masquerade';
+                     if ( ($rule_type eq 'source') || ($rule_type eq 'masquerade')) {
+                         $old_trans = 'outside-address';
+                     } elsif ($rule_type eq 'destination') {
+                         $old_trans = 'inside-address';
+                     }
+
+                     $xcp->set_value(['service', 'nat', "rule $rule_num", $old_trans, 'address'],
+                            $tvalue) if $rule_type ne 'masquerade';
+                } elsif ($tname eq 'port') {
+                    $xcp->set_value(['service', 'nat', "rule $rule_num", $old_trans, 'port'],
+                                    $tvalue);
+                }
+            }
+        }
+    }
+
+    $xcp->set_value(['service', 'nat', "rule $rule_num", 'type'], $rule_type);
+
+    $rule_num += 1;
+    $rule_type = undef;
+}
+
+$xcp->comment_out_node($xcp->get_node(['nat']));
+
+my $tmpname = "/tmp/vyatta_migrate_4_to_3.$$";
+open (my $tmp, '>', $tmpname)
+     or die "Can't open: $tmpname: $!";
+ 
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+
+move($tmpname, $orig_cfg)
+     or die "Move $tmpname to $orig_cfg failed: $!";
+ 
+exit(0);
