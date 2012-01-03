@@ -1,3 +1,11 @@
+vyatta-config-migrate (0.13.60) unstable; urgency=low
+
+  * Add NAT 3 to 4 migration script.
+  * Add NAT 4 to 3 migration script.
+  * Cleanup firewall 5-to-4 migration script
+
+ -- Daniil Baturin <daniil.baturin@vyatta.com>  Wed, 04 Jan 2012 01:52:00 +0700
+
 vyatta-config-migrate (0.13.59) unstable; urgency=low
 
   * Force release
