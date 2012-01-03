@@ -13,31 +13,6 @@ exit 1 unless $orig_cfg;
 my $xcp = new XorpConfigParser();
 $xcp->parse($orig_cfg);
 
-my $interfaces = $xcp->get_node(['interfaces']);
-exit 0 unless $interfaces; # tunnel interfaces not configured
-
-my $intf_children = $interfaces->{'children'};
-if (defined $intf_children){
-  foreach my $intf (@{$intf_children}){
-     if ( $intf->{'name'} =~ /tunnel tun[0-9]*/ ){
-       my $intf_params = $xcp->get_node(['interfaces', $intf->{'name'}, 'parameters', 'ip']);
-       if (defined $intf_params){
-         foreach my $intf_param (@{$intf_params->{'children'}}){
-           if ( ($intf_param->{'name'} =~ /tos/) or
-                ($intf_param->{'name'} =~ /ttl/) or
-                ($intf_param->{'name'} =~ /key/) ) {
-              $xcp->create_node(['interfaces', $intf->{'name'}, $intf_param->{'name'}]);
-           } elsif ($intf_param->{'name'} =~ /bridge-group/) {
-              foreach my $bridge_option (@{$intf_param->{'children'}}){
-                $xcp->create_node(['interfaces', $intf->{'name'}, $intf_param->{'name'}, $bridge_option->{'name'}]);
-              }
-           }
-         }
-         $xcp->comment_out_node($xcp->get_node(['interfaces', $intf->{'name'}, 'parameters']));
-       }
-    }
-  }
-
 ## Move conntrack settings to firewall branch
 
 my $conntrack = $xcp->get_node(['system', 'conntrack']);
@@ -58,9 +33,6 @@ foreach my $child (@{$conntrack_children}) {
   }
   elsif ( $name =~ /table-size/ ) {
     $xcp->set_value(['firewall', 'conntrack-table-size'], $value);
-  }
-  elsif ( $name =~ /tcp-loose/ ) {
-    $xcp->set_value(['firewall', 'conntrack-tcp-loose'], $value);
   }
 }
 
