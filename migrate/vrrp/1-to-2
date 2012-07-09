@@ -1,0 +1,52 @@
+#! /usr/bin/perl
+
+use strict;
+use warnings;
+
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+
+my $orig_cfg = shift;
+exit 1 unless $orig_cfg;
+
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_cfg);
+
+my $interfaces = $xcp->get_node(['interfaces']);
+exit 0 unless $interfaces; # tunnel interfaces not configured
+
+my $intf_children = $interfaces->{'children'};
+if (defined $intf_children){
+  foreach my $intf (@{$intf_children}){
+     if ( $intf->{'name'} =~ /ethernet eth[0-9]*/ ){
+       for my $intf_child (@{$intf->{'children'}}){
+         if ($intf_child->{'name'} =~ /vrrp/) {
+            my $vrrp_groups = $intf_child->{'children'};
+            foreach my $vgroup (@{$vrrp_groups}) {
+              foreach my $vg_child (@{$vgroup->{'children'}}){
+                if ($vg_child->{'name'} =~ /interface/) {
+                  $xcp->set_value(['interfaces', $intf->{'name'}, 'vrrp', $vgroup->{'name'}, 'rfc3768-compatibility'], ' ');
+                  $xcp->delete_child($vgroup->{'children'}, 'interface');
+                }
+              } 
+            }
+         }
+       }
+     }
+  }
+
+  my $tmpname = "/tmp/vyatta_migrate_vrrp_rfccompat.$$";
+  open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+  select $tmp;
+  $xcp->output(0);
+  select STDOUT;
+  close $tmp;
+
+  move($tmpname, $orig_cfg)
+    or die "Move $tmpname to $orig_cfg failed: $!";
+}
+
+exit 0;
