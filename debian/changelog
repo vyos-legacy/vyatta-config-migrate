@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.62) unstable; urgency=low
+
+  * Migration for ssh protocol-version
+
+ -- Stephen Hemminger <shemminger@vyatta.com>  Wed, 15 Aug 2012 16:15:11 -0700
+
 vyatta-config-migrate (0.13.61) unstable; urgency=low
 
   * new branch
