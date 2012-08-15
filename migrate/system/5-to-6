@@ -1,0 +1,6 @@
+#! /bin/sh
+
+# Remove ssh protocol-version (now always v2)
+sed -i -e '/^[ 	  ]*ssh /,/}/{
+  /protocol-version v/d
+}' $1

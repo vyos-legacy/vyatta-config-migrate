@@ -1,0 +1,2 @@
+#! /bin/true
+# no migration default of protocol v2 is fine in older release
