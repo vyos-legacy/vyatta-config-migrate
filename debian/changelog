@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.63) unstable; urgency=low
+
+  * Add IPsec 3 to 4 migration script.
+
+ -- Daniil Baturin <daniil.baturin@vyatta.com>  Thu, 23 Aug 2012 22:19:29 +0700
+
 vyatta-config-migrate (0.13.62) unstable; urgency=low
 
   * Migration for ssh protocol-version
