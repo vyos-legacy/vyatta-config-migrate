@@ -116,12 +116,19 @@ foreach my $peer (@{$peers}) {
 
             # Save peer local-ip
             my ($null, $peer_local_ip) = split( / /, $peer_child->{'name'} );
+	    my $orig_local_ip = $peer_local_ip;
+
+	    # "0.0.0.0" is now "any"
+	    if( $peer_local_ip eq "0.0.0.0" )
+	    {   
+	        $peer_local_ip = "any";
+            }      
 
             $xcp->comment_out_node
                   (
                       $xcp->get_node
                       (
-                          [ 'vpn', 'ipsec', 'site-to-site', $peer_name, "local-ip $peer_local_ip" ]
+                          [ 'vpn', 'ipsec', 'site-to-site', $peer_name, "local-ip $orig_local_ip" ]
                       )
                   );
             $xcp->create_node
@@ -142,9 +149,3 @@ select STDOUT;
 close $tmp;
 move($tmpname, $orig_config)
      or die "Move $tmpname to $orig_config failed: $!";
-
-
-
-
-
-
