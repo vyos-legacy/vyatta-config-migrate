@@ -1,0 +1,164 @@
+#!/usr/bin/perl
+#
+# Module: ipsec 4-to-3
+#
+# **** License ****
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# This code was originally developed by Vyatta, Inc.
+# Portions created by Vyatta are Copyright (C) 2012 Vyatta, Inc.
+# All Rights Reserved.
+#
+# Author: Daniil Baturin 
+# Date: Aug 2012 
+# Description:  Performs IPsec backwards config migration for 
+#               oxnard/pacifica IPv6 and VTI changes.
+#
+# **** End License ****
+#
+
+use strict;
+use lib "/opt/vyatta/share/perl5/";
+use XorpConfigParser;
+use File::Copy;
+use Data::Dumper;
+
+my $orig_config = shift;
+exit(1) if !defined($orig_config);
+
+# Parse the config
+my $xcp = new XorpConfigParser();
+$xcp->parse($orig_config);
+
+# We are only interested in "vpn ipsec site-to-site"
+# subtree
+my $ipsec = $xcp->get_node(['vpn', 'ipsec', 'site-to-site']);
+exit(0) unless $ipsec; # IPsec is not configured
+
+# And in "peers" tag node in it
+my $peers = $ipsec->{'children'};
+
+PEERS: foreach my $peer (@{$peers}) {
+    # Save peer name for later use ("peer ...")
+    my $peer_name = $peer->{'name'};
+
+    if( ($peer_name =~ /:/) || ($xcp->get_node(['vpn', 'ipsec', 'site-to-site', $peer_name, 'vti'])) )
+    # It's an IPv6 peer, as IPv4, hostname, or id
+    # can't contain a colon;
+    # or it has VTI.
+    # No IPv6 VPN and VTI in earlier versions, so comment it out
+    {
+        $xcp->comment_out_node
+	      (
+	          $xcp->get_node( [ 'vpn', 'ipsec', 'site-to-site', $peer_name ] )
+	      );
+	next PEERS;
+    }
+
+    foreach my $peer_child (@{$peer->{'children'}}) 
+    {
+	# in "tunnel" subtree we need to rename
+	# "local prefix" to "local subnet" and
+	# "remote prefix" to "remote subnet"
+        if( $peer_child->{'name'} =~ /tunnel/ )
+        {
+             # Save tunnel name ("tunnel X")
+             my $tunnel_name = $peer_child->{'name'};
+
+             # "vpn ipsec site-to-site peer ... tunnel ..." walkthrough
+	     foreach my $tunnel_child (@{$peer_child->{'children'}})
+             {
+                 if( $tunnel_child->{'name'} =~ /local/ )
+                 {
+                      foreach my $tunnel_option (@{$tunnel_child->{'children'}})
+                      {
+                          if( $tunnel_option->{'name'} =~ /prefix/ )
+                          {
+                              my ($null, $subnet) = split( / /, $tunnel_option->{'name'} );
+                              $xcp->comment_out_node
+                                    (
+                                        $xcp->get_node
+                                              (
+                                                  [ 'vpn', 'ipsec', 'site-to-site', $peer_name,
+                                                     $tunnel_name, 'local', "prefix $subnet" ]
+                                              )
+                                    );
+                              $xcp->create_node
+                                    (
+                                       [ 'vpn', 'ipsec', 'site-to-site', $peer_name,
+                                         $tunnel_name, 'local', "subnet $subnet" ]
+                                    );
+                          }
+                      }
+                 }
+                 elsif( $tunnel_child->{'name'} =~ /remote/ )
+                 {
+                     foreach my $tunnel_option (@{$tunnel_child->{'children'}})
+                     {
+                        if( $tunnel_option->{'name'} =~ /prefix/ )
+                        {
+                            my ($null, $subnet) = split( / /, $tunnel_option->{'name'} );
+                            $xcp->comment_out_node
+                                  (
+                                      $xcp->get_node
+                                            (
+                                                [ 'vpn', 'ipsec', 'site-to-site', $peer_name,
+                                                   $tunnel_name, 'remote', "prefix $subnet" ]
+                                            )
+                                  );
+                            $xcp->create_node
+                                  (
+                                      [ 'vpn', 'ipsec', 'site-to-site', $peer_name,
+                                        $tunnel_name, 'remote', "subnet $subnet" ]
+                                  );
+                        }
+                     }
+                 }
+             }
+        }
+        elsif( $peer_child->{'name'} =~ /local-address/ )
+        # Rename "local-ip" to "local-address"
+        {
+
+            # Save peer local-ip
+            my ($null, $peer_local_ip) = split( / /, $peer_child->{'name'} );
+	    my $orig_local_ip = $peer_local_ip;
+
+	    # "any" used to be "0.0.0.0"
+	    if( $peer_local_ip eq "any" )
+	    {
+               $peer_local_ip = "0.0.0.0";
+	    }
+
+            $xcp->comment_out_node
+                  (
+                      $xcp->get_node
+                      (
+                          [ 'vpn', 'ipsec', 'site-to-site', $peer_name, "local-address $orig_local_ip" ]
+                      )
+                  );
+            $xcp->create_node
+                 (
+                     [ 'vpn', 'ipsec', 'site-to-site', $peer_name, "local-ip $peer_local_ip" ]
+                 );
+        }
+    }
+}
+
+my $tmpname = "/tmp/vyatta_migrate_ipsec_4_to_3.$$";
+open (my $tmp, '>', $tmpname)
+    or die "Can't open: $tmpname: $!";
+
+select $tmp;
+$xcp->output(0);
+select STDOUT;
+close $tmp;
+move($tmpname, $orig_config)
+     or die "Move $tmpname to $orig_config failed: $!";
