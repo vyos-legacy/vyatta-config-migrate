@@ -1,3 +1,11 @@
+vyatta-config-migrate (0.13.64) unstable; urgency=low
+
+  * Support renaming "0.0.0.0" to "any".
+  * Don't check peer name at every inner loop step.
+  * Add IPsec 4 to 3 migration script.
+
+ -- Daniil Baturin <daniil.baturin@vyatta.com>  Fri, 24 Aug 2012 21:42:49 +0700
+
 vyatta-config-migrate (0.13.63) unstable; urgency=low
 
   * Add IPsec 3 to 4 migration script.
