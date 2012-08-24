@@ -46,11 +46,11 @@ exit(0) unless $ipsec; # IPsec is not configured
 my $peers = $ipsec->{'children'};
 
 foreach my $peer (@{$peers}) {
+    # Save peer name for later use ("peer ...")
+    my $peer_name = $peer->{'name'};
+
     foreach my $peer_child (@{$peer->{'children'}}) 
     {
-        # Save peer name for later use ("peer ...")
-        my $peer_name = $peer->{'name'};
-
 	# in "tunnel" subtree we need to rename
 	# "local subnet" to "local prefix" and
 	# "remote subnet" to "remote prefix"
