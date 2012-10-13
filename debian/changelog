@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.64+pacifica2) unstable; urgency=low
+
+  * new branch
+
+ -- John Southworth <john.southworth@vyatta.com>  Fri, 12 Oct 2012 18:47:44 -0700
+
 vyatta-config-migrate (0.13.64+pacifica1) unstable; urgency=low
 
   * new branch
