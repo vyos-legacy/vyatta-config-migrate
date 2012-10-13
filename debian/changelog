@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.65) unstable; urgency=low
+
+  * new branch
+
+ -- John Southworth <john.southworth@vyatta.com>  Fri, 12 Oct 2012 19:47:12 -0700
+
 vyatta-config-migrate (0.13.64) unstable; urgency=low
 
   * Support renaming "0.0.0.0" to "any".
