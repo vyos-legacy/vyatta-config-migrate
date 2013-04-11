@@ -1,3 +1,9 @@
+vyatta-config-migrate (0.13.67) unstable; urgency=low
+
+  * remove pre-Redding migration scripts
+
+ -- John Southworth <john.southworth@vyatta.com>  Thu, 11 Apr 2013 09:42:47 -0700
+
 vyatta-config-migrate (0.13.66) unstable; urgency=low
 
   * Fix dependency reversal.
