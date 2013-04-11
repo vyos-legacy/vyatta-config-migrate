@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# "port-name" and "port-number" were single-value nodes before and multi now.
-# need to remove ':'.
-
-sed -i '/^firewall /,/^}/{s/port-\(name\|number\):/port-\1/}' $1
-
-exit 0
-
