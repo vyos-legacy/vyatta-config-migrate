@@ -1,0 +1,4 @@
+#! /bin/sh
+
+# Convert smp_affinity to smp-affinity
+sed -i -e 's/ smp_affinity / smp-affinity /' $1
