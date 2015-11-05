@@ -1,3 +1,10 @@
+vyatta-config-migrate (0.13.65+vyos2+lithium4) unstable; urgency=low
+
+  [ Alex Harpin ]
+  * vyatta-config-migrate: add migration of smp_affinity to smp-affinity
+
+ -- Alex Harpin <development@landsofshadow.co.uk>  Thu, 05 Nov 2015 20:37:31 +0000
+ 
 vyatta-config-migrate (0.13.65+vyos2+lithium3) unstable; urgency=low
 
   * vyatta-config-migrate: update dh_gencontrol with new development flag
