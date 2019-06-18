@@ -29,13 +29,6 @@ sub migrate_ntp {
     }
 }
 
-# Add new default serial console node
-sub add_console {
-    my ($xcp) = @_;
-
-    $xcp->set_value(['system', 'console', 'device ttyS0', 'speed'], '9600');
-}
-
 # main
 my $orig_cfg = shift;
 exit 1 unless $orig_cfg;
@@ -47,8 +40,6 @@ my $snode = $xcp->get_node(['system']);
 die "No system in configuration" unless $snode;
 
 migrate_ntp($xcp, $snode);
-
-add_console($xcp);
 
 my $tmpname = "/tmp/vyatta_migrate_system.$$";
 open (my $tmp, '>', $tmpname)
